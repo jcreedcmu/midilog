@@ -6,7 +6,7 @@ const spawn = require('child_process').spawn;
 const DEBUG = false;
 const GAP_SEC = 10;
 const LOW_NOTE = 36;
-const HIGH_NOTE = 90;
+const HIGH_NOTE = 60;
 
 const input = new midi.input();
 debug(count = input.getPortCount());
