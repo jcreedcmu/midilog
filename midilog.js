@@ -3,7 +3,7 @@ const midi = require('midi');
 const format = require('date-format');
 const spawn = require('child_process').spawn;
 
-const DEBUG = false;
+const DEBUG = true;
 const GAP_SEC = 10;
 const LOW_NOTE = 36;
 const HIGH_NOTE = 60;
@@ -42,6 +42,7 @@ input.on('message', function(deltaTime, message) {
 		if (state != undefined) {
 		  ship_out();
 		}
+		debug('Pushing upstream...');
 		const shell = spawn(__dirname + '/push.sh', []);
 		shell.stdout.on('data', data =>  console.log(data.toString()));
 		shell.stderr.on('data', data =>  console.error(data.toString()));
@@ -96,3 +97,5 @@ function play(note) {
   setTimeout(() => { output.sendMessage([144, note, 32]); }, 0);
   setTimeout(() => { output.sendMessage([144, note, 0]); }, 300);
 }
+
+debug('Listening...');
