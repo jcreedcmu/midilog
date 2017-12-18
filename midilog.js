@@ -117,8 +117,10 @@ function playback_chunk(ix, events) {
 	 debug(events[ix]);
 	 output.sendMessage(events[ix].message);
 	 const timer = new nt();
-	 if (ix < events.length - 1)
-		timer.setTimeout(() => playback_chunk(ix + 1, events), [], events[ix + 1].delta.midi_us + 'u');
+	 if (ix < events.length - 1) {
+		const delay = Math.floor(0.5 * events[ix + 1].delta.midi_us);
+		timer.setTimeout(() => playback_chunk(ix + 1, events), [], delay + 'u');
+	 }
   }
 }
 
