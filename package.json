@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "date-format": "^1.2.0",
-    "midi": "^0.9.5"
+    "midi": "^0.9.5",
+    "nanotimer": "^0.3.15"
   }
 }

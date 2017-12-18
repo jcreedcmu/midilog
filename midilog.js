@@ -2,6 +2,7 @@ const fs = require('fs');
 const midi = require('midi');
 const format = require('date-format');
 const spawn = require('child_process').spawn;
+const nt = require('nanotimer');
 
 const DEBUG = true;
 const GAP_SEC = 10;
@@ -113,9 +114,11 @@ function playback(date, index) {
 
 function playback_chunk(ix, events) {
   if (ix < events.length) {
-	 console.log(events[ix], events[ix].message);
+	 debug(events[ix]);
 	 output.sendMessage(events[ix].message);
-	 setTimeout(() => playback_chunk(ix + 1, events), events[ix].delta.wall_ms);
+	 const timer = new nt();
+	 if (ix < events.length - 1)
+		timer.setTimeout(() => playback_chunk(ix + 1, events), [], events[ix + 1].delta.midi_us + 'u');
   }
 }
 
