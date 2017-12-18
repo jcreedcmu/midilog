@@ -21,7 +21,7 @@ for(let i = 0; i < count; i++)
 debug('output openPort result:', output.openPort(1));
 
 function init_state(time, message) {
-  return {times: {chunkStart: time, last: time}, events: [{message, delta: {midi_us: 0, wall_us: 0}}]};
+  return {times: {chunkStart: time, last: time}, events: [{message, delta: {midi_us: 0, wall_ms: 0}}]};
 }
 
 let state = undefined;
@@ -67,7 +67,13 @@ input.on('message', function(deltaTime, message) {
 
 });
 input.ignoreTypes(false, false, false);
-process.stdin.on('data', function(x) { });
+process.stdin.on('data', function(x) {
+  const s = x.toString();
+  let m = s.match('^play (.*) (.*)');
+  if (m) {
+	 playback(m[1], m[2]);
+  }
+});
 
 function append(data) {
   events.push(data);
@@ -99,3 +105,19 @@ function play(note) {
 }
 
 debug('Listening...');
+
+function playback(date, index) {
+  const data = JSON.parse(fs.readFileSync(__dirname + '/log/' + date + '.json', 'utf8').split('\n')[index]);
+  playback_chunk(0, data.events);
+}
+
+function playback_chunk(ix, events) {
+  if (ix < events.length) {
+	 console.log(events[ix], events[ix].message);
+	 output.sendMessage(events[ix].message);
+	 setTimeout(() => playback_chunk(ix + 1, events), events[ix].delta.wall_ms);
+  }
+}
+
+
+// play 2017-12-17 3
