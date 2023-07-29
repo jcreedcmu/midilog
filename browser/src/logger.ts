@@ -1,4 +1,5 @@
 import { PlayCallback, init } from './app';
+import { getText } from './util';
 
 type SongEvent = {
   message: number[],
@@ -37,11 +38,6 @@ function getOutput(midi: WebMidi.MIDIAccess): WebMidi.MIDIOutput {
     }
   }
   throw 'output not found';
-}
-
-async function getText(url: string): Promise<string> {
-  const resp = await fetch(new Request(url));
-  return await resp.text();
 }
 
 export type Index = { file: string, lines: number }[];
@@ -87,18 +83,7 @@ async function go() {
     document.getElementById('index')!.innerHTML = '<div>' + prefix + '</div>';
     document.getElementById('saveButton')!.addEventListener('click', saveCallback);
 
-    const playCallback: PlayCallback = async (file, ix) => {
-      const lines = (await getText(`/log/${file}`)).split('\n');
-      const song: Song = JSON.parse(lines[ix]);
-      const t = window.performance.now();
-      let tp = t;
-      song.events.forEach(event => {
-        tp += event.delta.midi_us / 1000;
-        output.send(event.message, tp);
-      });
-    };
-
-    init({ index, playCallback });
+    init({ index, output });
 
     input.addEventListener('midimessage', e => {
       if (state.events.length == 0) {

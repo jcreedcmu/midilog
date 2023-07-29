@@ -1,10 +1,15 @@
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
 import { Index, Song } from './logger';
+import { getText } from './util';
 
 export type PlayCallback = (file: string, ix: number) => void;
 
-export type AppProps = { index: Index, playCallback: PlayCallback };
+export type AppProps = {
+  index: Index,
+  output: WebMidi.MIDIOutput,
+};
+
 export type AppState = {
   song: Song | undefined, playback: { startTime: number } | undefined
 };
@@ -31,11 +36,23 @@ function renderIndex(index: Index, dispatch: Dispatch): JSX.Element {
 }
 
 function App(props: AppProps): JSX.Element {
+
+  const playCallback: PlayCallback = async (file, ix) => {
+    const lines = (await getText(`/log/${file}`)).split('\n');
+    const song: Song = JSON.parse(lines[ix]);
+    const t = window.performance.now();
+    let tp = t;
+    song.events.forEach(event => {
+      tp += event.delta.midi_us / 1000;
+      props.output.send(event.message, tp);
+    });
+  };
+
   const [state, setState] = useState<AppState>({ playback: undefined, song: undefined });
   const dispatch: Dispatch = (action) => {
     switch (action.t) {
       case 'playFile':
-        props.playCallback(action.file, action.ix);
+        playCallback(action.file, action.ix);
         break;
     }
   };
