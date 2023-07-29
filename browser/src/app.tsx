@@ -1,7 +1,7 @@
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
-import { Index, Song } from './logger';
 import { allNotesOff, getText, unreachable } from './util';
+import { Index, Song } from './types';
 
 export type PlayCallback = (file: string, ix: number) => void;
 

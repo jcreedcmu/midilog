@@ -1,18 +1,7 @@
 import { PlayCallback, init } from './app';
+import { Index, Song, SongEvent } from './types';
 import { getText } from './util';
 
-type SongEvent = {
-  message: number[],
-  delta: {
-    midi_us: number,
-    wall_ms: number,
-  }
-}
-
-export type Song = {
-  start: string, // date
-  events: SongEvent[],
-};
 
 function getInput(midi: WebMidi.MIDIAccess): WebMidi.MIDIInput {
   for (const input of midi.inputs.entries()) {
@@ -39,8 +28,6 @@ function getOutput(midi: WebMidi.MIDIAccess): WebMidi.MIDIOutput {
   }
   throw 'output not found';
 }
-
-export type Index = { file: string, lines: number }[];
 
 // Global state
 const state: {
