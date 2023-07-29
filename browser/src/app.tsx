@@ -28,6 +28,7 @@ export type Playback = {
 };
 
 export type AppState = {
+  songIx: SongIx | undefined,
   song: TimedSong | undefined,
   playback: Playback | undefined,
 };
@@ -40,13 +41,15 @@ export type Action =
   ;
 
 export type Dispatch = (action: Action) => void;
+export type SongIx = { file: string, ix: number };
 
-function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef): JSX.Element {
+function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentSong: SongIx | undefined): JSX.Element {
   const rows: JSX.Element[] = index.map(row => {
     const links: JSX.Element[] = [];
     for (let i = 0; i < row.lines; i++) {
+      let backgroundColor = currentSong && currentSong.file == row.file && currentSong.ix == i ? 'yellow' : 'white';
       const button = <button
-        style={{ cursor: 'pointer' }}
+        style={{ cursor: 'pointer', backgroundColor, border: '1px solid #aaa', borderRadius: 4 }}
         onClick={() => { dispatch({ t: 'playFile', file: row.file, ix: i }); }}>
         {i}
       </button>;
@@ -85,7 +88,7 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
 
 function App(props: AppProps): JSX.Element {
   const { index, output } = props;
-  const [state, setState] = useState<AppState>({ playback: undefined, song: undefined });
+  const [state, setState] = useState<AppState>({ playback: undefined, song: undefined, songIx: undefined });
   const [cref, mc] = useCanvas(
     state, _renderMainCanvas,
     [state.playback, state.song],
@@ -103,8 +106,7 @@ function App(props: AppProps): JSX.Element {
     const timeoutId = window.setTimeout(() => dispatch(nextNoteAction), 0);
 
     setState(s => {
-      console.log('set new state', file, ix);
-      return { song: song, playback: { timeoutId, playhead, startTime } };
+      return { song: song, songIx: { file, ix }, playback: { timeoutId, playhead, startTime } };
     });
 
 
@@ -119,8 +121,7 @@ function App(props: AppProps): JSX.Element {
         if (state.playback !== undefined) {
           clearTimeout(state.playback.timeoutId);
           setState(s => {
-            s.playback = undefined;
-            return s;
+            return { playback: undefined, song: undefined, songIx: undefined };
           });
         }
         allNotesOff(output);
@@ -148,7 +149,7 @@ function App(props: AppProps): JSX.Element {
         unreachable(action);
     }
   };
-  return renderIndex(index, dispatch, cref);
+  return renderIndex(index, dispatch, cref, state.songIx);
 }
 
 export function init(props: AppProps) {
