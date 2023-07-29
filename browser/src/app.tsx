@@ -27,7 +27,7 @@ export type AppState = {
 export type Action =
   { t: 'none' }
   | { t: 'playFile', file: string, ix: number }
-  | { t: 'playNote', message: number[], newTime_ms: number, newIx: number | undefined }
+  | { t: 'playNote', message: number[], atTime_ms: number, newTime_ms: number, newIx: number | undefined }
   | { t: 'panic' }
   ;
 
@@ -60,7 +60,7 @@ function playNextNote(state: AppState): Action {
 
   const event = state.song.events[eventIndex];
   const newIx = eventIndex + 1 < state.song.events.length ? eventIndex + 1 : undefined;
-  return { t: 'playNote', message: event.message, newTime_ms: nowTime_ms + event.delta.midi_us / 1000, newIx };
+  return { t: 'playNote', message: event.message, atTime_ms: nowTime_ms, newTime_ms: nowTime_ms + event.delta.midi_us / 1000, newIx };
 }
 
 function App(props: AppProps): JSX.Element {
@@ -84,6 +84,10 @@ function App(props: AppProps): JSX.Element {
         playCallback(action.file, action.ix);
         break;
       case 'panic':
+        setState(s => {
+          s.playback = undefined;
+          return s;
+        });
         allNotesOff(output);
         break;
       case 'none':
@@ -92,14 +96,11 @@ function App(props: AppProps): JSX.Element {
         setState(s => {
           if (s.playback === undefined)
             return s;
-          console.log('should be positive: ', s.playback.nowTime_ms - window.performance.now());
-          output.send(action.message, s.playback.nowTime_ms);
+          output.send(action.message, action.newTime_ms);
           if (action.newIx != undefined) {
             s.playback.eventIndex = action.newIx;
             s.playback.nowTime_ms = action.newTime_ms;
-            //            const delay = Math.max(0, action.newTime_ms - window.performance.now() - PLAYBACK_ANTICIPATION_MS);
-            const delay = 0;
-            console.log(delay);
+            const delay = Math.max(0, action.newTime_ms - window.performance.now() - PLAYBACK_ANTICIPATION_MS);
             setTimeout(() => dispatch(playNextNote(s)), delay);
           }
           return s;
