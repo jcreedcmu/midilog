@@ -1,7 +1,7 @@
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
 import { allNotesOff, getText, unreachable } from './util';
-import { Index, Song } from './types';
+import { Index, Song, TimedSong, timedSong } from './types';
 
 export type PlayCallback = (file: string, ix: number) => void;
 
@@ -16,7 +16,7 @@ export type AppProps = {
 };
 
 export type AppState = {
-  song: Song | undefined, playback: {
+  song: TimedSong | undefined, playback: {
     timeoutId: number,
     eventIndex: number,
     startTime: DOMHighResTimeStamp,
@@ -27,7 +27,7 @@ export type AppState = {
 export type Action =
   { t: 'none' }
   | { t: 'playFile', file: string, ix: number }
-  | { t: 'playNote', message: number[], atTime_ms: number, newTime_ms: number, newIx: number | undefined }
+  | { t: 'playNote', message: number[], atTime_ms: number, newIx: number | undefined }
   | { t: 'panic' }
   ;
 
@@ -60,7 +60,7 @@ function playNextNote(state: AppState): Action {
 
   const event = state.song.events[eventIndex];
   const newIx = eventIndex + 1 < state.song.events.length ? eventIndex + 1 : undefined;
-  return { t: 'playNote', message: event.message, atTime_ms: nowTime_ms, newTime_ms: nowTime_ms + event.delta.midi_us / 1000, newIx };
+  return { t: 'playNote', message: event.message, atTime_ms: event.time_ms, newIx };
 }
 
 function App(props: AppProps): JSX.Element {
@@ -69,7 +69,7 @@ function App(props: AppProps): JSX.Element {
 
   const playCallback: PlayCallback = async (file, ix) => {
     const lines = (await getText(`/log/${file}`)).split('\n');
-    const song: Song = JSON.parse(lines[ix]);
+    const song = timedSong(JSON.parse(lines[ix]));
 
     const startTime = window.performance.now();
     const timeoutId = window.setTimeout(() => dispatch(playNextNote(state)), 0);
@@ -94,13 +94,15 @@ function App(props: AppProps): JSX.Element {
         break;
       case 'playNote':
         setState(s => {
-          if (s.playback === undefined)
+          if (s.playback === undefined || s.song === undefined)
             return s;
-          output.send(action.message, action.newTime_ms);
-          if (action.newIx != undefined) {
+          console.log('sending', action.atTime_ms);
+          output.send(action.message, s.playback.startTime + action.atTime_ms);
+          if (action.newIx !== undefined) {
+            const delay = Math.max(0,
+              s.playback.startTime + s.song.events[action.newIx].time_ms
+              - window.performance.now() - PLAYBACK_ANTICIPATION_MS);
             s.playback.eventIndex = action.newIx;
-            s.playback.nowTime_ms = action.newTime_ms;
-            const delay = Math.max(0, action.newTime_ms - window.performance.now() - PLAYBACK_ANTICIPATION_MS);
             setTimeout(() => dispatch(playNextNote(s)), delay);
           }
           return s;
