@@ -11,6 +11,7 @@ app.use('/log', serveIndex(__dirname + '/../../log'));
 app.use('/log', express.static(__dirname + '/../../log'));
 
 app.get('/js/logger.js', (req, res) => { res.sendFile(path.resolve(__dirname, 'logger.js')) });
+app.get('/js/logger.js.map', (req, res) => { res.sendFile(path.resolve(__dirname, 'logger.js.map')) });
 app.get('/logIndex.json', (req, res) => {
 
   const metadata: { file: string, lines: number }[] = [];

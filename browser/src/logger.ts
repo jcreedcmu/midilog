@@ -1,3 +1,5 @@
+import { PlayCallback, init } from './app';
+
 type SongEvent = {
   message: number[],
   delta: {
@@ -6,7 +8,7 @@ type SongEvent = {
   }
 }
 
-type Song = {
+export type Song = {
   start: string, // date
   events: SongEvent[],
 };
@@ -42,25 +44,7 @@ async function getText(url: string): Promise<string> {
   return await resp.text();
 }
 
-type Index = { file: string, lines: number }[];
-
-function htmlOfIndex(index: Index): { html: string, bindings: { id: string, file: string, ix: number }[] } {
-  let rv = '';
-  rv += '<table>';
-  const bindings: { id: string, file: string, ix: number }[] = [];
-  index.forEach((row, rix) => {
-    rv += '<tr>';
-    rv += `<td>${row.file}</td>`;
-    for (let i = 0; i < row.lines; i++) {
-      const id = `link_${rix}_${i}`;
-      bindings.push({ id, file: row.file, ix: i });
-      rv += `<td><a id="${id}" href="#">${i}</a></td>`;
-    }
-    rv += '</tr>';
-  });
-  rv += '</table>';
-  return { html: rv, bindings };
-}
+export type Index = { file: string, lines: number }[];
 
 // Global state
 const state: {
@@ -88,6 +72,7 @@ async function saveCallback() {
   state.events = [];
 }
 
+
 async function go() {
   try {
 
@@ -98,25 +83,22 @@ async function go() {
     console.log(`success`);
     const ijson = await getText('/logIndex.json');
     const index: Index = JSON.parse(ijson);
-    const { html, bindings } = htmlOfIndex(index);
     const prefix = '<button id="saveButton">save</button>';
-    document.getElementById('index')!.innerHTML = '<div>' + prefix + html + '</div>';
+    document.getElementById('index')!.innerHTML = '<div>' + prefix + '</div>';
     document.getElementById('saveButton')!.addEventListener('click', saveCallback);
 
-    bindings.forEach(({ id, file, ix }) => {
-      const link = document.getElementById(id)!;
-      link.onclick = async (e) => {
-        const lines = (await getText(`/log/${file}`)).split('\n');
-        const song: Song = JSON.parse(lines[ix]);
-        const t = window.performance.now();
-        let tp = t;
-        song.events.forEach(event => {
-          tp += event.delta.midi_us / 1000;
-          output.send(event.message, tp);
-        });
+    const playCallback: PlayCallback = async (file, ix) => {
+      const lines = (await getText(`/log/${file}`)).split('\n');
+      const song: Song = JSON.parse(lines[ix]);
+      const t = window.performance.now();
+      let tp = t;
+      song.events.forEach(event => {
+        tp += event.delta.midi_us / 1000;
+        output.send(event.message, tp);
+      });
+    };
 
-      }
-    });
+    init({ index, playCallback });
 
     input.addEventListener('midimessage', e => {
       if (state.events.length == 0) {
@@ -146,4 +128,5 @@ async function go() {
   }
 }
 
-go();
+// Gets called by <script> tag after <body> after document fully loaded
+(window as any)['go'] = go;
