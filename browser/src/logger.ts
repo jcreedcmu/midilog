@@ -86,6 +86,7 @@ async function go() {
     init({ index, output });
 
     input.addEventListener('midimessage', e => {
+      console.log(e.data);
       if (state.events.length == 0) {
         state.songStart = new Date().toJSON();
         state.events.push({

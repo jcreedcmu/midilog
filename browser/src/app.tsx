@@ -1,7 +1,7 @@
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
 import { Index, Song } from './logger';
-import { getText } from './util';
+import { allNotesOff, getText, unreachable } from './util';
 
 export type PlayCallback = (file: string, ix: number) => void;
 
@@ -15,7 +15,9 @@ export type AppState = {
 };
 
 export type Action =
-  | { t: 'playFile', file: string, ix: number };
+  | { t: 'playFile', file: string, ix: number }
+  | { t: 'panic' }
+  ;
 
 export type Dispatch = (action: Action) => void;
 
@@ -32,11 +34,12 @@ function renderIndex(index: Index, dispatch: Dispatch): JSX.Element {
     }
     return <tr><td>{row.file}</td> {links}</tr>;
   });
+  rows.push(<tr><td><button onClick={() => dispatch({ t: 'panic' })}>Panic</button></td></tr>);
   return <table>{rows}</table>;
 }
 
 function App(props: AppProps): JSX.Element {
-
+  const { index, output } = props;
   const playCallback: PlayCallback = async (file, ix) => {
     const lines = (await getText(`/log/${file}`)).split('\n');
     const song: Song = JSON.parse(lines[ix]);
@@ -44,7 +47,8 @@ function App(props: AppProps): JSX.Element {
     let tp = t;
     song.events.forEach(event => {
       tp += event.delta.midi_us / 1000;
-      props.output.send(event.message, tp);
+      console.log(event.message);
+      output.send(event.message, tp);
     });
   };
 
@@ -54,9 +58,14 @@ function App(props: AppProps): JSX.Element {
       case 'playFile':
         playCallback(action.file, action.ix);
         break;
+      case 'panic':
+        allNotesOff(output);
+        break;
+      default:
+        unreachable(action);
     }
   };
-  return renderIndex(props.index, dispatch);
+  return renderIndex(index, dispatch);
 }
 
 export function init(props: AppProps) {
