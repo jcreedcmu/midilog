@@ -1,8 +1,8 @@
 import { render } from 'preact';
-import { useState, useEffect } from 'preact/hooks';
-import { allNotesOff, getText, unreachable } from './util';
-import { Index, NoteSong, Song, TimedSong, noteSong, timedSong } from './types';
+import { useState } from 'preact/hooks';
+import { pitchColor, Index, NoteSong, TimedSong, noteSong, timedSong } from './song';
 import { CanvasInfo, CanvasRef, useCanvas } from './use-canvas';
+import { allNotesOff, getText, unreachable } from './util';
 
 export type PlayCallback = (file: string, ix: number) => void;
 
@@ -79,10 +79,18 @@ function playNextNote(song: TimedSong, playhead: Playhead): Action {
 }
 
 function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
-  ci.d.clearRect(0, 0, ci.size.x, ci.size.y);
-  if (state.song !== undefined) {
-    state.song.events.forEach(event => {
-      ci.d.fillRect(event.time_ms / 10, 10, 10, 10);
+  const { d } = ci;
+  const pixel_of_ms = 1 / 60;
+  const pixel_of_pitch = 2;
+  const vert_offset = 200;
+  d.fillStyle = "#eee";
+  d.fillRect(0, 0, ci.size.x, ci.size.y);
+  if (state.nSong !== undefined) {
+    state.nSong.events.forEach(event => {
+      if (event.t == 'note') {
+        d.fillStyle = pitchColor[event.pitch % 12];
+        d.fillRect(event.time_ms * pixel_of_ms, vert_offset - pixel_of_pitch * event.pitch, event.dur_ms * pixel_of_ms, pixel_of_pitch * 2);
+      }
     });
   }
 }

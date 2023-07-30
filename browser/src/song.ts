@@ -82,6 +82,20 @@ export function noteSong(timedSong: TimedSong): NoteSong {
         console.log(`unknown midi event ${event.message.join(", ")}`);
     }
   });
-  console.log(events);
   return { start: timedSong.start, events };
 }
+
+export const pitchColor = [
+  "#7882e2",
+  "#38396e",
+  "#df4f48",
+  "#696800",
+  "#fffd58",
+  "#f47937",
+  "#782a00",
+  "#71d256",
+  "#790061",
+  "#d343b6",
+  "#075152",
+  "#75c4c5",
+];

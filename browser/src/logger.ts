@@ -1,5 +1,5 @@
 import { PlayCallback, init } from './app';
-import { Index, Song, SongEvent } from './types';
+import { Index, Song, SongEvent } from './song';
 import { getText } from './util';
 
 
