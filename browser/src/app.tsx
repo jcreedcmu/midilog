@@ -1,7 +1,7 @@
 import { render } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
 import { allNotesOff, getText, unreachable } from './util';
-import { Index, Song, TimedSong, timedSong } from './types';
+import { Index, NoteSong, Song, TimedSong, noteSong, timedSong } from './types';
 import { CanvasInfo, CanvasRef, useCanvas } from './use-canvas';
 
 export type PlayCallback = (file: string, ix: number) => void;
@@ -30,6 +30,7 @@ export type Playback = {
 export type AppState = {
   songIx: SongIx | undefined,
   song: TimedSong | undefined,
+  nSong: NoteSong | undefined,
   playback: Playback | undefined,
 };
 
@@ -88,7 +89,12 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
 
 function App(props: AppProps): JSX.Element {
   const { index, output } = props;
-  const [state, setState] = useState<AppState>({ playback: undefined, song: undefined, songIx: undefined });
+  const [state, setState] = useState<AppState>({
+    playback: undefined,
+    song: undefined,
+    nSong: undefined,
+    songIx: undefined
+  });
   const [cref, mc] = useCanvas(
     state, _renderMainCanvas,
     [state.playback, state.song],
@@ -98,6 +104,7 @@ function App(props: AppProps): JSX.Element {
   const playCallback: PlayCallback = async (file, ix) => {
     const lines = (await getText(`/log/${file}`)).split('\n');
     const song = timedSong(JSON.parse(lines[ix]));
+    const nSong = noteSong(song);
 
     const startTime = window.performance.now();
     const playhead: Playhead = { eventIndex: 0, nowTime_ms: startTime };
@@ -106,7 +113,7 @@ function App(props: AppProps): JSX.Element {
     const timeoutId = window.setTimeout(() => dispatch(nextNoteAction), 0);
 
     setState(s => {
-      return { song: song, songIx: { file, ix }, playback: { timeoutId, playhead, startTime } };
+      return { song: song, nSong: nSong, songIx: { file, ix }, playback: { timeoutId, playhead, startTime } };
     });
 
 
@@ -121,7 +128,7 @@ function App(props: AppProps): JSX.Element {
         if (state.playback !== undefined) {
           clearTimeout(state.playback.timeoutId);
           setState(s => {
-            return { playback: undefined, song: undefined, songIx: undefined };
+            return { playback: undefined, song: undefined, songIx: undefined, nSong: undefined };
           });
         }
         allNotesOff(output);
