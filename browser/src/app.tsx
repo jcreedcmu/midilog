@@ -11,6 +11,8 @@ export type PlayCallback = (file: string, ix: number) => void;
 
 const PLAYBACK_ANTICIPATION_MS = 50;
 
+const IDLE_CALLBACK_MS = 50;
+
 export type AppProps = {
   index: Index,
   output: WebMidi.MIDIOutput,
@@ -36,14 +38,19 @@ export type AppState = {
 };
 
 export type Action =
-  { t: 'none' }
+  | { t: 'none' }
   | { t: 'playFile', file: string, ix: number }
   | { t: 'playNote', message: number[], atTime_ms: number, newIx: number | undefined }
   | { t: 'panic' }
+  | { t: 'idle' }
   ;
 
 export type Dispatch = (action: Action) => void;
 export type SongIx = { file: string, ix: number };
+
+export function init(props: AppProps) {
+  render(<App {...props} />, document.querySelector('.app') as any);
+}
 
 function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentSong: SongIx | undefined): JSX.Element {
   const rows: JSX.Element[] = index.map(row => {
@@ -62,7 +69,7 @@ function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentS
   rows.push(<tr><td><button onClick={() => dispatch({ t: 'panic' })}>Panic</button></td></tr>);
   return <div><table>{rows}</table>
     <canvas
-      ref={cref} style={{ width: '100%', height: `200px`, border: '1px solid black' }} />
+      ref={cref} style={{ width: '100%', height: `300px`, border: '1px solid black' }} />
   </div>;
 }
 
@@ -75,13 +82,12 @@ function playNextNote(song: TimedSong, playhead: Playhead): Action {
 }
 
 function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
-  console.log('rerender');
   const { d } = ci;
   const { playback } = state;
 
-  const pixel_of_ms = 1 / 20;
-  const pixel_of_pitch = 2;
-  const vert_offset = 200;
+  const pixel_of_ms = 1 / 10;
+  const pixel_of_pitch = 3;
+  const vert_offset = 300;
   const [cw, ch] = [ci.size.x, ci.size.y];
 
   let playHeadPosition_px = 0;
@@ -93,7 +99,7 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
   if (playHeadPosition_px > cw / 2) {
     xshift = cw / 2 - playHeadPosition_px;
   }
-  d.fillStyle = "#eee";
+  d.fillStyle = "#ddd";
   d.fillRect(0, 0, cw, ch);
   if (state.nSong !== undefined) {
     state.nSong.events.forEach(event => {
@@ -106,7 +112,6 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
 
   if (playback !== undefined) {
     d.fillStyle = 'black';
-    console.log('playHead', playHeadPosition_px);
     d.fillRect(xshift + playHeadPosition_px, 0, 2, ch);
   }
 }
@@ -119,10 +124,9 @@ function App(props: AppProps): JSX.Element {
     nSong: undefined,
     songIx: undefined
   });
-  console.log('app render', state.playback?.playhead.eventIndex);
   const [cref, mc] = useCanvas(
     state, _renderMainCanvas,
-    [state.playback?.playhead.eventIndex, state.playback, state.song],
+    [state.playback?.playhead.fastNowTime_ms, state.playback, state.song],
     () => { }
   );
 
@@ -134,7 +138,6 @@ function App(props: AppProps): JSX.Element {
     const startTime_ms = window.performance.now();
     const playhead: Playhead = { eventIndex: 0, nowTime_ms: startTime_ms, fastNowTime_ms: startTime_ms };
     const nextNoteAction = playNextNote(song, playhead);
-    console.log('set timeout', file, ix, nextNoteAction);
     const timeoutId = window.setTimeout(() => dispatch(nextNoteAction), 0);
 
     setState(s => {
@@ -165,9 +168,20 @@ function App(props: AppProps): JSX.Element {
           if (s.playback === undefined || s.song === undefined)
             return s;
           const { song, playback } = s;
-          console.log('sending', action.atTime_ms);
           output.send(action.message, s.playback.startTime_ms + action.atTime_ms);
-          s = scheduleNextCallback(action.newIx, s, dispatch);
+          if (action.newIx !== undefined) {
+            playback.playhead.eventIndex = action.newIx;
+            s = scheduleNextCallback(s, dispatch);
+          }
+          return { ...s };
+        });
+        break;
+      case 'idle':
+        setState(s => {
+          if (s.playback === undefined || s.song === undefined)
+            return s;
+          const { song, playback } = s;
+          s = scheduleNextCallback(s, dispatch);
           return { ...s };
         });
         break;
@@ -178,19 +192,19 @@ function App(props: AppProps): JSX.Element {
   return renderIndex(index, dispatch, cref, state.songIx);
 }
 
-export function init(props: AppProps) {
-  render(<App {...props} />, document.querySelector('.app') as any);
-}
-
-function scheduleNextCallback(newIx: number | undefined, s: AppState, dispatch: Dispatch): AppState {
+function scheduleNextCallback(s: AppState, dispatch: Dispatch): AppState {
   const { song, playback } = s;
   if (playback === undefined || song === undefined)
     return s;
 
-  if (newIx !== undefined) {
-    const delay = Math.max(0,
-      playback.startTime_ms + song.events[newIx].time_ms - window.performance.now() - PLAYBACK_ANTICIPATION_MS);
-    playback.playhead.eventIndex = newIx;
+  const newIx = playback.playhead.eventIndex;
+
+  const delay = Math.max(0,
+    playback.startTime_ms + song.events[newIx].time_ms - window.performance.now() - PLAYBACK_ANTICIPATION_MS);
+
+  if (delay > IDLE_CALLBACK_MS) {
+    setTimeout(() => dispatch({ t: 'idle' }), IDLE_CALLBACK_MS);
+  } else {
     setTimeout(() => dispatch(playNextNote(song, playback.playhead)), delay);
   }
   playback.playhead.fastNowTime_ms = window.performance.now();
