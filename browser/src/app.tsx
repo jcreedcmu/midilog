@@ -167,14 +167,7 @@ function App(props: AppProps): JSX.Element {
           const { song, playback } = s;
           console.log('sending', action.atTime_ms);
           output.send(action.message, s.playback.startTime_ms + action.atTime_ms);
-          if (action.newIx !== undefined) {
-            const delay = Math.max(0,
-              s.playback.startTime_ms + s.song.events[action.newIx].time_ms
-              - window.performance.now() - PLAYBACK_ANTICIPATION_MS);
-            s.playback.playhead.eventIndex = action.newIx;
-            setTimeout(() => dispatch(playNextNote(song, playback.playhead)), delay);
-          }
-          s.playback.playhead.fastNowTime_ms = window.performance.now();
+          s = scheduleNextCallback(action.newIx, s, dispatch);
           return { ...s };
         });
         break;
@@ -187,4 +180,19 @@ function App(props: AppProps): JSX.Element {
 
 export function init(props: AppProps) {
   render(<App {...props} />, document.querySelector('.app') as any);
+}
+
+function scheduleNextCallback(newIx: number | undefined, s: AppState, dispatch: Dispatch): AppState {
+  const { song, playback } = s;
+  if (playback === undefined || song === undefined)
+    return s;
+
+  if (newIx !== undefined) {
+    const delay = Math.max(0,
+      playback.startTime_ms + song.events[newIx].time_ms - window.performance.now() - PLAYBACK_ANTICIPATION_MS);
+    playback.playhead.eventIndex = newIx;
+    setTimeout(() => dispatch(playNextNote(song, playback.playhead)), delay);
+  }
+  playback.playhead.fastNowTime_ms = window.performance.now();
+  return s;
 }
