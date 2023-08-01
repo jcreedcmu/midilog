@@ -19,12 +19,13 @@ export type AppProps = {
 export type Playhead = {
   eventIndex: number,
   nowTime_ms: DOMHighResTimeStamp,
+  fastNowTime_ms: DOMHighResTimeStamp,
 };
 
 export type Playback = {
   timeoutId: number,
   playhead: Playhead,
-  startTime: DOMHighResTimeStamp,
+  startTime_ms: DOMHighResTimeStamp,
 };
 
 export type AppState = {
@@ -61,16 +62,11 @@ function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentS
   rows.push(<tr><td><button onClick={() => dispatch({ t: 'panic' })}>Panic</button></td></tr>);
   return <div><table>{rows}</table>
     <canvas
-      ref={cref} style={{ width: '100%', height: '200px', border: '1px solid black' }} />
+      ref={cref} style={{ width: '100%', height: `200px`, border: '1px solid black' }} />
   </div>;
 }
 
 function playNextNote(song: TimedSong, playhead: Playhead): Action {
-  // if (state.playback === undefined)
-  //   return { t: 'none' };
-  // if (state.song === undefined)
-  //   return { t: 'none' };
-
   const { eventIndex, nowTime_ms } = playhead;
 
   const event = song.events[eventIndex];
@@ -79,19 +75,39 @@ function playNextNote(song: TimedSong, playhead: Playhead): Action {
 }
 
 function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
+  console.log('rerender');
   const { d } = ci;
-  const pixel_of_ms = 1 / 60;
+  const { playback } = state;
+
+  const pixel_of_ms = 1 / 20;
   const pixel_of_pitch = 2;
   const vert_offset = 200;
+  const [cw, ch] = [ci.size.x, ci.size.y];
+
+  let playHeadPosition_px = 0;
+  if (playback !== undefined) {
+    playHeadPosition_px = (playback.playhead.fastNowTime_ms - playback.startTime_ms) * pixel_of_ms;
+  }
+
+  let xshift = 0;
+  if (playHeadPosition_px > cw / 2) {
+    xshift = cw / 2 - playHeadPosition_px;
+  }
   d.fillStyle = "#eee";
-  d.fillRect(0, 0, ci.size.x, ci.size.y);
+  d.fillRect(0, 0, cw, ch);
   if (state.nSong !== undefined) {
     state.nSong.events.forEach(event => {
       if (event.t == 'note') {
         d.fillStyle = pitchColor[event.pitch % 12];
-        d.fillRect(event.time_ms * pixel_of_ms, vert_offset - pixel_of_pitch * event.pitch, event.dur_ms * pixel_of_ms, pixel_of_pitch * 2);
+        d.fillRect(xshift + event.time_ms * pixel_of_ms, vert_offset - pixel_of_pitch * event.pitch, event.dur_ms * pixel_of_ms, pixel_of_pitch * 2);
       }
     });
+  }
+
+  if (playback !== undefined) {
+    d.fillStyle = 'black';
+    console.log('playHead', playHeadPosition_px);
+    d.fillRect(xshift + playHeadPosition_px, 0, 2, ch);
   }
 }
 
@@ -103,9 +119,10 @@ function App(props: AppProps): JSX.Element {
     nSong: undefined,
     songIx: undefined
   });
+  console.log('app render', state.playback?.playhead.eventIndex);
   const [cref, mc] = useCanvas(
     state, _renderMainCanvas,
-    [state.playback, state.song],
+    [state.playback?.playhead.eventIndex, state.playback, state.song],
     () => { }
   );
 
@@ -114,14 +131,14 @@ function App(props: AppProps): JSX.Element {
     const song = timedSong(JSON.parse(lines[ix]));
     const nSong = noteSong(song);
 
-    const startTime = window.performance.now();
-    const playhead: Playhead = { eventIndex: 0, nowTime_ms: startTime };
+    const startTime_ms = window.performance.now();
+    const playhead: Playhead = { eventIndex: 0, nowTime_ms: startTime_ms, fastNowTime_ms: startTime_ms };
     const nextNoteAction = playNextNote(song, playhead);
     console.log('set timeout', file, ix, nextNoteAction);
     const timeoutId = window.setTimeout(() => dispatch(nextNoteAction), 0);
 
     setState(s => {
-      return { song: song, nSong: nSong, songIx: { file, ix }, playback: { timeoutId, playhead, startTime } };
+      return { song: song, nSong: nSong, songIx: { file, ix }, playback: { timeoutId, playhead, startTime_ms } };
     });
 
 
@@ -149,15 +166,16 @@ function App(props: AppProps): JSX.Element {
             return s;
           const { song, playback } = s;
           console.log('sending', action.atTime_ms);
-          output.send(action.message, s.playback.startTime + action.atTime_ms);
+          output.send(action.message, s.playback.startTime_ms + action.atTime_ms);
           if (action.newIx !== undefined) {
             const delay = Math.max(0,
-              s.playback.startTime + s.song.events[action.newIx].time_ms
+              s.playback.startTime_ms + s.song.events[action.newIx].time_ms
               - window.performance.now() - PLAYBACK_ANTICIPATION_MS);
             s.playback.playhead.eventIndex = action.newIx;
             setTimeout(() => dispatch(playNextNote(song, playback.playhead)), delay);
           }
-          return s;
+          s.playback.playhead.fastNowTime_ms = window.performance.now();
+          return { ...s };
         });
         break;
       default:
