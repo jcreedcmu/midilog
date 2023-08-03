@@ -11,8 +11,6 @@ export type PlayCallback = (file: string, ix: number) => void;
 
 const PLAYBACK_ANTICIPATION_MS = 50;
 
-const IDLE_CALLBACK_MS = 50;
-
 export type AppProps = {
   index: Index,
   output: WebMidi.MIDIOutput,
@@ -202,10 +200,10 @@ function scheduleNextCallback(s: AppState, dispatch: Dispatch): AppState {
   const delay = Math.max(0,
     playback.startTime_ms + song.events[newIx].time_ms - window.performance.now() - PLAYBACK_ANTICIPATION_MS);
 
-  if (delay > IDLE_CALLBACK_MS) {
-    setTimeout(() => dispatch({ t: 'idle' }), IDLE_CALLBACK_MS);
+  if (delay > PLAYBACK_ANTICIPATION_MS) {
+    requestAnimationFrame(() => dispatch({ t: 'idle' }));
   } else {
-    setTimeout(() => dispatch(playNextNote(song, playback.playhead)), delay);
+    requestAnimationFrame(() => dispatch(playNextNote(song, playback.playhead)));
   }
   playback.playhead.fastNowTime_ms = window.performance.now();
   return s;
