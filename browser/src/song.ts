@@ -99,3 +99,18 @@ export const pitchColor = [
   "#075152",
   "#75c4c5",
 ];
+
+export const pitchName = [
+  "C",
+  "C#",
+  "D",
+  "Eb",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "Ab",
+  "A",
+  "Bb",
+  "B",
+];

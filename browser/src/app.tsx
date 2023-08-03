@@ -1,6 +1,6 @@
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
-import { pitchColor, Index, NoteSong, TimedSong, noteSong, timedSong } from './song';
+import { pitchColor, Index, NoteSong, TimedSong, noteSong, timedSong, pitchName } from './song';
 import { CanvasInfo, CanvasRef, useCanvas } from './use-canvas';
 import { allNotesOff, getText, unreachable } from './util';
 
@@ -94,16 +94,34 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
   }
 
   let xshift = 0;
-  if (playHeadPosition_px > cw / 2) {
-    xshift = cw / 2 - playHeadPosition_px;
-  }
+
+  // if (playHeadPosition_px > cw / 2) { 
+  xshift = cw / 2 - playHeadPosition_px;
+  //}
   d.fillStyle = "#ddd";
   d.fillRect(0, 0, cw, ch);
+  const fontHeight = 12;
+
+  d.font = `bold ${fontHeight}px sans-serif`;
+  d.textBaseline = 'middle';
+  d.textAlign = 'right';
   if (state.nSong !== undefined) {
     state.nSong.events.forEach(event => {
       if (event.t == 'note') {
         d.fillStyle = pitchColor[event.pitch % 12];
         d.fillRect(xshift + event.time_ms * pixel_of_ms, vert_offset - pixel_of_pitch * event.pitch, event.dur_ms * pixel_of_ms, pixel_of_pitch * 2);
+      }
+    });
+    state.nSong.events.forEach(event => {
+      if (event.t == 'note') {
+        d.fillStyle = 'black';
+        d.fillText(pitchName[event.pitch % 12], xshift + event.time_ms * pixel_of_ms, 1 + vert_offset - pixel_of_pitch * (event.pitch - 1));
+
+        d.fillStyle = pitchColor[event.pitch % 12];
+        d.fillText(pitchName[event.pitch % 12], -1 + xshift + event.time_ms * pixel_of_ms, vert_offset - pixel_of_pitch * (event.pitch - 1));
+
+
+
       }
     });
   }
