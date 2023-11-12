@@ -1,5 +1,5 @@
 watch:
 	node build.mjs watch
 
-run:
+serve:
 	node out/index.js

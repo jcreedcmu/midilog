@@ -56,7 +56,7 @@ input.on('message', function(deltaTime, message) {
   }
 
   // Most stuff ends up here
-  const now = new Date();
+  const now = Date.now();
   if (state == undefined) {
 	 state = init_state(now, message);
   }
@@ -87,14 +87,23 @@ function debug(...args) {
 
 // called every GAP_SEC / 4;
 function heartbeat() {
-  if (state != undefined && ((new Date() - state.times.last) > GAP_SEC * 1000)) {
+
+  debug(`heartbeat. state: ${state==undefined?'undefined':'defined'}`);
+  if (state == undefined) {
+    return;
+  }
+  const gap = ((Date.now() - state.times.last) - GAP_SEC * 1000);
+  debug(`   gap excess: ${gap}`);
+  if (state != undefined && gap > 0) {
 	 ship_out();
   }
 }
 
 function ship_out() {
+  console.log("shipping out...");
   // ship out a chunk. Precondition: state should not be undefined if you're calling this.
   const filename = format.asString('yyyy-MM-dd.json', state.chunkStart);
+  console.log(`filename: ${filename}`);
   fs.appendFileSync(__dirname + '/log/' + filename, JSON.stringify({start: state.times.chunkStart, events: state.events}) + '\n');
 
   state = undefined;
