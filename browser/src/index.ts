@@ -12,6 +12,18 @@ app.use('/log', express.static(__dirname + '/../../log'));
 
 app.get('/js/logger.js', (req, res) => { res.sendFile(path.resolve(__dirname, 'logger.js')) });
 app.get('/js/logger.js.map', (req, res) => { res.sendFile(path.resolve(__dirname, 'logger.js.map')) });
+app.get('/js/spessasynth_processor.min.js', (req, res) => {
+  const filePath = path.resolve(__dirname, '../node_modules/spessasynth_lib/dist/spessasynth_processor.min.js');
+  console.log('Serving worklet from:', filePath);
+  res.type('application/javascript');
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error('Error sending worklet file:', err);
+      res.status(404).send('Worklet file not found');
+    }
+  });
+});
+app.use('/soundfont', express.static(path.resolve(__dirname, '../../soundfont')));
 app.get('/logIndex.json', (req, res) => {
 
   const metadata: { file: string, lines: number }[] = [];

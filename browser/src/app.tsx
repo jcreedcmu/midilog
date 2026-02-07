@@ -2,7 +2,8 @@ import { render } from 'preact';
 import { useRef, useState } from 'preact/hooks';
 import { pitchColor, Index, NoteSong, TimedSong, noteSong, timedSong, pitchName, SongEvent } from './song';
 import { CanvasInfo, CanvasRef, useCanvas } from './use-canvas';
-import { allNotesOff, getText, unreachable } from './util';
+import { getText, unreachable } from './util';
+import { AudioOutput, OutputMode, send, allNotesOff, setMode } from './audio-output';
 
 export type PlayCallback = (file: string, ix: number) => void;
 
@@ -13,7 +14,7 @@ const PLAYBACK_ANTICIPATION_MS = 50;
 
 export type InitProps = {
   index: Index,
-  output: WebMidi.MIDIOutput,
+  output: AudioOutput,
   onSave: (events: SongEvent[]) => Promise<void>,
 };
 
@@ -56,6 +57,7 @@ export type Action =
   | { t: 'seek', delta_ms: number }
   | { t: 'addPendingEvent', event: SongEvent }
   | { t: 'clearPendingEvents' }
+  | { t: 'setOutputMode', mode: OutputMode }
   ;
 
 export type Dispatch = (action: Action) => void;
@@ -79,7 +81,7 @@ type CanvasHandlers = {
   onPointerUp: (e: PointerEvent) => void;
 };
 
-function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentSong: SongIx | undefined, playback: Playback | undefined, canvasHandlers: CanvasHandlers, pendingEvents: SongEvent[], onSave: () => void, onDiscard: () => void): JSX.Element {
+function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentSong: SongIx | undefined, playback: Playback | undefined, canvasHandlers: CanvasHandlers, pendingEvents: SongEvent[], onSave: () => void, onDiscard: () => void, outputMode: OutputMode, hasMidi: boolean): JSX.Element {
   const rows: JSX.Element[] = index.map(row => {
     const links: JSX.Element[] = [];
     for (let i = 0; i < row.lines; i++) {
@@ -94,10 +96,23 @@ function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentS
     return <tr><td>{row.file}</td> {links}</tr>;
   });
   return <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-    <div style={{ padding: 8, borderBottom: '1px solid #ccc' }}>
+    <div style={{ padding: 8, borderBottom: '1px solid #ccc', display: 'flex', alignItems: 'center' }}>
       <button onClick={onSave}>save</button>
       <button onClick={onDiscard} style={{ marginLeft: 8 }}>discard</button>
       <span style={{ marginLeft: 8 }}>{pendingEvents.length} events</span>
+      <span style={{ marginLeft: 'auto' }}>
+        <button
+          onClick={() => dispatch({ t: 'setOutputMode', mode: 'midi' })}
+          disabled={!hasMidi}
+          style={{ fontWeight: outputMode === 'midi' ? 'bold' : 'normal' }}>
+          MIDI
+        </button>
+        <button
+          onClick={() => dispatch({ t: 'setOutputMode', mode: 'software' })}
+          style={{ marginLeft: 4, fontWeight: outputMode === 'software' ? 'bold' : 'normal' }}>
+          Software
+        </button>
+      </span>
     </div>
     <div style={{ flex: 1, overflowY: 'auto', borderBottom: '1px solid #ccc' }}>
       <table>{rows}</table>
@@ -231,7 +246,7 @@ function App(props: AppProps): JSX.Element {
           if (s.playback.pausedAt_ms !== undefined)
             return s; // Don't play notes if paused
           const { song, playback } = s;
-          output.send(action.message, s.playback.startTime_ms + action.atTime_ms);
+          send(output, action.message, s.playback.startTime_ms + action.atTime_ms);
           if (action.newIx !== undefined) {
             playback.playhead.eventIndex = action.newIx;
             s = scheduleNextCallback(s, dispatch);
@@ -308,6 +323,10 @@ function App(props: AppProps): JSX.Element {
       case 'clearPendingEvents':
         setState(s => ({ ...s, pendingEvents: [] }));
         break;
+      case 'setOutputMode':
+        setMode(output, action.mode);
+        setState(s => ({ ...s })); // Force re-render to update UI
+        break;
       default:
         unreachable(action);
     }
@@ -351,7 +370,7 @@ function App(props: AppProps): JSX.Element {
     }
   };
 
-  return renderIndex(index, dispatch, cref, state.songIx, state.playback, canvasHandlers, state.pendingEvents, handleSave, handleDiscard);
+  return renderIndex(index, dispatch, cref, state.songIx, state.playback, canvasHandlers, state.pendingEvents, handleSave, handleDiscard, output.mode, output.midiOutput !== null);
 }
 
 function scheduleNextCallback(s: AppState, dispatch: Dispatch): AppState {

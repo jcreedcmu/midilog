@@ -1,4 +1,5 @@
 import { init } from './app';
+import { createAudioOutput } from './audio-output';
 import { Index, Song, SongEvent } from './song';
 import { getText } from './util';
 
@@ -13,14 +14,14 @@ function getInput(midi: WebMidi.MIDIAccess): WebMidi.MIDIInput {
   throw 'input not found';
 }
 
-function getOutput(midi: WebMidi.MIDIAccess): WebMidi.MIDIOutput {
+function getOutput(midi: WebMidi.MIDIAccess): WebMidi.MIDIOutput | null {
   for (const output of midi.outputs.entries()) {
     const name = output[1].name;
     if (name !== undefined && name.match(/Turtle Beach/)) {
       return output[1];
     }
   }
-  throw 'output not found';
+  return null;
 }
 
 // Timing state for computing deltas
@@ -34,9 +35,10 @@ async function go() {
   try {
     const midi = await navigator.requestMIDIAccess({ sysex: true });
     const input = getInput(midi);
-    const output = getOutput(midi);
+    const midiOutput = getOutput(midi);
+    const output = createAudioOutput(midiOutput, '/soundfont/gm.sf2');
 
-    console.log(`success`);
+    console.log(`success, midi output: ${midiOutput ? 'found' : 'not found'}`);
     const ijson = await getText('/logIndex.json');
     const index: Index = JSON.parse(ijson);
 

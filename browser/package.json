@@ -19,6 +19,7 @@
     "@types/webmidi": "^2.0.7",
     "express": "^4.18.2",
     "preact": "^10.16.0",
-    "serve-index": "^1.9.1"
+    "serve-index": "^1.9.1",
+    "spessasynth_lib": "^4.1.2"
   }
 }
