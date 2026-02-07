@@ -1,4 +1,4 @@
-import { PlayCallback, init } from './app';
+import { init } from './app';
 import { Index, Song, SongEvent } from './song';
 import { getText } from './util';
 
@@ -13,12 +13,6 @@ function getInput(midi: WebMidi.MIDIAccess): WebMidi.MIDIInput {
   throw 'input not found';
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((res, rej) => {
-    setTimeout(() => { res(); }, ms);
-  });
-}
-
 function getOutput(midi: WebMidi.MIDIAccess): WebMidi.MIDIOutput {
   for (const output of midi.outputs.entries()) {
     const name = output[1].name;
@@ -29,36 +23,15 @@ function getOutput(midi: WebMidi.MIDIAccess): WebMidi.MIDIOutput {
   throw 'output not found';
 }
 
-// Global state
-const state: {
-  events: SongEvent[],
-  midiLastTime_us: number,
-  wallLastTime_ms: number,
-  songStart: string
-} = {
-  events: [],
+// Timing state for computing deltas
+const timing = {
   midiLastTime_us: 0,
   wallLastTime_ms: 0,
-  songStart: '',
-}
-
-
-async function saveCallback() {
-  const payload: Song = { start: state.songStart, events: state.events };
-  const req = new Request('/api/save', {
-    method: 'POST', body: JSON.stringify(payload), headers: {
-      'Content-Type': 'application/json'
-    }
-  });
-  const res = await (await fetch(req)).json();
-  console.log(res);
-  state.events = [];
-}
-
+  isFirstEvent: true,
+};
 
 async function go() {
   try {
-
     const midi = await navigator.requestMIDIAccess({ sysex: true });
     const input = getInput(midi);
     const output = getOutput(midi);
@@ -66,33 +39,42 @@ async function go() {
     console.log(`success`);
     const ijson = await getText('/logIndex.json');
     const index: Index = JSON.parse(ijson);
-    const prefix = '<button id="saveButton">save</button>';
-    document.getElementById('index')!.innerHTML = '<div>' + prefix + '</div>';
-    document.getElementById('saveButton')!.addEventListener('click', saveCallback);
 
-    init({ index, output });
+    const onSave = async (events: SongEvent[]) => {
+      const payload: Song = { start: new Date().toJSON(), events };
+      const req = new Request('/api/save', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const res = await (await fetch(req)).json();
+      console.log(res);
+      timing.isFirstEvent = true;
+    };
+
+    const app = init({ index, output, onSave });
 
     input.addEventListener('midimessage', e => {
       console.log(e.data);
-      if (state.events.length == 0) {
-        state.songStart = new Date().toJSON();
-        state.events.push({
-          message: Array.from(e.data), delta: {
-            midi_us: 0,
-            wall_ms: 0,
+      let event: SongEvent;
+      if (timing.isFirstEvent) {
+        event = {
+          message: Array.from(e.data),
+          delta: { midi_us: 0, wall_ms: 0 }
+        };
+        timing.isFirstEvent = false;
+      } else {
+        event = {
+          message: Array.from(e.data),
+          delta: {
+            midi_us: Math.round(1000 * e.timeStamp - timing.midiLastTime_us),
+            wall_ms: Math.round(Date.now() - timing.wallLastTime_ms),
           }
-        });
+        };
       }
-      else {
-        state.events.push({
-          message: Array.from(e.data), delta: {
-            midi_us: Math.round(1000 * e.timeStamp - state.midiLastTime_us),
-            wall_ms: Math.round(Date.now() - state.wallLastTime_ms),
-          }
-        });
-      }
-      state.midiLastTime_us = 1000 * e.timeStamp;
-      state.wallLastTime_ms = Date.now();
+      timing.midiLastTime_us = 1000 * e.timeStamp;
+      timing.wallLastTime_ms = Date.now();
+      app.dispatch({ t: 'addPendingEvent', event });
     });
   }
   catch (e) {

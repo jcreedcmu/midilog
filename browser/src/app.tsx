@@ -1,6 +1,6 @@
 import { render } from 'preact';
 import { useRef, useState } from 'preact/hooks';
-import { pitchColor, Index, NoteSong, TimedSong, noteSong, timedSong, pitchName } from './song';
+import { pitchColor, Index, NoteSong, TimedSong, noteSong, timedSong, pitchName, SongEvent } from './song';
 import { CanvasInfo, CanvasRef, useCanvas } from './use-canvas';
 import { allNotesOff, getText, unreachable } from './util';
 
@@ -11,9 +11,18 @@ export type PlayCallback = (file: string, ix: number) => void;
 
 const PLAYBACK_ANTICIPATION_MS = 50;
 
-export type AppProps = {
+export type InitProps = {
   index: Index,
   output: WebMidi.MIDIOutput,
+  onSave: (events: SongEvent[]) => Promise<void>,
+};
+
+export type AppProps = InitProps & {
+  dispatchRef: { current: Dispatch | null },
+};
+
+export type AppHandle = {
+  dispatch: Dispatch,
 };
 
 export type Playhead = {
@@ -34,6 +43,7 @@ export type AppState = {
   song: TimedSong | undefined,
   nSong: NoteSong | undefined,
   playback: Playback | undefined,
+  pendingEvents: SongEvent[],
 };
 
 export type Action =
@@ -44,13 +54,23 @@ export type Action =
   | { t: 'pause' }
   | { t: 'resume' }
   | { t: 'seek', delta_ms: number }
+  | { t: 'addPendingEvent', event: SongEvent }
+  | { t: 'clearPendingEvents' }
   ;
 
 export type Dispatch = (action: Action) => void;
 export type SongIx = { file: string, ix: number };
 
-export function init(props: AppProps) {
-  render(<App {...props} />, document.querySelector('.app') as any);
+export function init(props: InitProps): AppHandle {
+  const dispatchRef: { current: Dispatch | null } = { current: null };
+  render(<App {...props} dispatchRef={dispatchRef} />, document.querySelector('.app') as any);
+  return {
+    dispatch: (action: Action) => {
+      if (dispatchRef.current) {
+        dispatchRef.current(action);
+      }
+    }
+  };
 }
 
 type CanvasHandlers = {
@@ -59,7 +79,7 @@ type CanvasHandlers = {
   onPointerUp: (e: PointerEvent) => void;
 };
 
-function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentSong: SongIx | undefined, playback: Playback | undefined, canvasHandlers: CanvasHandlers): JSX.Element {
+function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentSong: SongIx | undefined, playback: Playback | undefined, canvasHandlers: CanvasHandlers, pendingEvents: SongEvent[], onSave: () => void): JSX.Element {
   const rows: JSX.Element[] = index.map(row => {
     const links: JSX.Element[] = [];
     for (let i = 0; i < row.lines; i++) {
@@ -74,6 +94,10 @@ function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentS
     return <tr><td>{row.file}</td> {links}</tr>;
   });
   return <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ padding: 8, borderBottom: '1px solid #ccc' }}>
+      <button onClick={onSave}>save</button>
+      <span style={{ marginLeft: 8 }}>{pendingEvents.length} events</span>
+    </div>
     <div style={{ flex: 1, overflowY: 'auto', borderBottom: '1px solid #ccc' }}>
       <table>{rows}</table>
     </div>
@@ -161,12 +185,13 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
 }
 
 function App(props: AppProps): JSX.Element {
-  const { index, output } = props;
+  const { index, output, onSave, dispatchRef } = props;
   const [state, setState] = useState<AppState>({
     playback: undefined,
     song: undefined,
     nSong: undefined,
-    songIx: undefined
+    songIx: undefined,
+    pendingEvents: []
   });
   const [cref, mc] = useCanvas(
     state, _renderMainCanvas,
@@ -184,7 +209,7 @@ function App(props: AppProps): JSX.Element {
 
     // Load in paused state - user must click Play to start
     setState(s => {
-      return { song: song, nSong: nSong, songIx: { file, ix }, playback: { timeoutId: 0, playhead, startTime_ms, pausedAt_ms: startTime_ms } };
+      return { ...s, song: song, nSong: nSong, songIx: { file, ix }, playback: { timeoutId: 0, playhead, startTime_ms, pausedAt_ms: startTime_ms } };
     });
   };
 
@@ -273,9 +298,23 @@ function App(props: AppProps): JSX.Element {
           };
         });
         break;
+      case 'addPendingEvent':
+        setState(s => ({ ...s, pendingEvents: [...s.pendingEvents, action.event] }));
+        break;
+      case 'clearPendingEvents':
+        setState(s => ({ ...s, pendingEvents: [] }));
+        break;
       default:
         unreachable(action);
     }
+  };
+
+  // Expose dispatch to parent
+  dispatchRef.current = dispatch;
+
+  const handleSave = async () => {
+    await onSave(state.pendingEvents);
+    dispatch({ t: 'clearPendingEvents' });
   };
 
   const dragRef = useRef<{ startX: number, didDrag: boolean } | null>(null);
@@ -304,7 +343,7 @@ function App(props: AppProps): JSX.Element {
     }
   };
 
-  return renderIndex(index, dispatch, cref, state.songIx, state.playback, canvasHandlers);
+  return renderIndex(index, dispatch, cref, state.songIx, state.playback, canvasHandlers, state.pendingEvents, handleSave);
 }
 
 function scheduleNextCallback(s: AppState, dispatch: Dispatch): AppState {
