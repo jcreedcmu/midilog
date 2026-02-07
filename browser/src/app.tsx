@@ -70,21 +70,23 @@ function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentS
   const isPaused = playback?.pausedAt_ms !== undefined;
   const hasPlayback = playback !== undefined;
   return <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-    <div style={{ flexShrink: 0, padding: 8 }}>
-      {hasPlayback && (
-        <button
-          style={{ marginRight: 8, fontWeight: 'bold' }}
-          onClick={() => dispatch({ t: isPaused ? 'resume' : 'pause' })}>
-          {isPaused ? 'Play' : 'Pause'}
-        </button>
-      )}
-      <button onClick={() => dispatch({ t: 'panic' })}>Panic</button>
-    </div>
     <div style={{ flex: 1, overflowY: 'auto', borderBottom: '1px solid #ccc' }}>
       <table>{rows}</table>
     </div>
-    <canvas
-      ref={cref} style={{ width: '100%', height: '300px', flexShrink: 0, border: '1px solid black' }} />
+    <div style={{ flexShrink: 0 }}>
+      <div style={{ padding: 8 }}>
+        {hasPlayback && (
+          <button
+            style={{ marginRight: 8, fontWeight: 'bold' }}
+            onClick={() => dispatch({ t: isPaused ? 'resume' : 'pause' })}>
+            {isPaused ? 'Play' : 'Pause'}
+          </button>
+        )}
+        <button onClick={() => dispatch({ t: 'panic' })}>Panic</button>
+      </div>
+      <canvas
+        ref={cref} style={{ width: '100%', height: '300px', border: '1px solid black' }} />
+    </div>
   </div>;
 }
 
