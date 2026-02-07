@@ -26,6 +26,7 @@ export type Playback = {
   timeoutId: number,
   playhead: Playhead,
   startTime_ms: DOMHighResTimeStamp,
+  pausedAt_ms: DOMHighResTimeStamp | undefined,  // undefined = playing, number = paused
 };
 
 export type AppState = {
@@ -41,6 +42,8 @@ export type Action =
   | { t: 'playNote', message: number[], atTime_ms: number, newIx: number | undefined }
   | { t: 'panic' }
   | { t: 'idle' }
+  | { t: 'pause' }
+  | { t: 'resume' }
   ;
 
 export type Dispatch = (action: Action) => void;
@@ -50,7 +53,7 @@ export function init(props: AppProps) {
   render(<App {...props} />, document.querySelector('.app') as any);
 }
 
-function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentSong: SongIx | undefined): JSX.Element {
+function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentSong: SongIx | undefined, playback: Playback | undefined): JSX.Element {
   const rows: JSX.Element[] = index.map(row => {
     const links: JSX.Element[] = [];
     for (let i = 0; i < row.lines; i++) {
@@ -64,7 +67,18 @@ function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentS
     }
     return <tr><td>{row.file}</td> {links}</tr>;
   });
-  rows.push(<tr><td><button onClick={() => dispatch({ t: 'panic' })}>Panic</button></td></tr>);
+  const isPaused = playback?.pausedAt_ms !== undefined;
+  const hasPlayback = playback !== undefined;
+  rows.push(<tr><td>
+    <button onClick={() => dispatch({ t: 'panic' })}>Panic</button>
+    {hasPlayback && (
+      <button
+        style={{ marginLeft: 8 }}
+        onClick={() => dispatch({ t: isPaused ? 'resume' : 'pause' })}>
+        {isPaused ? 'Play' : 'Pause'}
+      </button>
+    )}
+  </td></tr>);
   return <div><table>{rows}</table>
     <canvas
       ref={cref} style={{ width: '100%', height: `300px`, border: '1px solid black' }} />
@@ -157,7 +171,7 @@ function App(props: AppProps): JSX.Element {
     const timeoutId = window.setTimeout(() => dispatch(nextNoteAction), 0);
 
     setState(s => {
-      return { song: song, nSong: nSong, songIx: { file, ix }, playback: { timeoutId, playhead, startTime_ms } };
+      return { song: song, nSong: nSong, songIx: { file, ix }, playback: { timeoutId, playhead, startTime_ms, pausedAt_ms: undefined } };
     });
 
 
@@ -183,6 +197,8 @@ function App(props: AppProps): JSX.Element {
         setState(s => {
           if (s.playback === undefined || s.song === undefined)
             return s;
+          if (s.playback.pausedAt_ms !== undefined)
+            return s; // Don't play notes if paused
           const { song, playback } = s;
           output.send(action.message, s.playback.startTime_ms + action.atTime_ms);
           if (action.newIx !== undefined) {
@@ -196,16 +212,47 @@ function App(props: AppProps): JSX.Element {
         setState(s => {
           if (s.playback === undefined || s.song === undefined)
             return s;
+          if (s.playback.pausedAt_ms !== undefined)
+            return s; // Don't schedule next callback if paused
           const { song, playback } = s;
           s = scheduleNextCallback(s, dispatch);
           return { ...s };
+        });
+        break;
+      case 'pause':
+        setState(s => {
+          if (s.playback === undefined || s.playback.pausedAt_ms !== undefined)
+            return s;
+          allNotesOff(output);
+          return {
+            ...s,
+            playback: {
+              ...s.playback,
+              pausedAt_ms: window.performance.now()
+            }
+          };
+        });
+        break;
+      case 'resume':
+        setState(s => {
+          if (s.playback === undefined || s.playback.pausedAt_ms === undefined)
+            return s;
+          const now = window.performance.now();
+          const pauseDuration = now - s.playback.pausedAt_ms;
+          const newPlayback: Playback = {
+            ...s.playback,
+            startTime_ms: s.playback.startTime_ms + pauseDuration,
+            pausedAt_ms: undefined
+          };
+          const newState = { ...s, playback: newPlayback };
+          return scheduleNextCallback(newState, dispatch);
         });
         break;
       default:
         unreachable(action);
     }
   };
-  return renderIndex(index, dispatch, cref, state.songIx);
+  return renderIndex(index, dispatch, cref, state.songIx, state.playback);
 }
 
 function scheduleNextCallback(s: AppState, dispatch: Dispatch): AppState {
