@@ -38,9 +38,9 @@ async function initSynth(output: AudioOutput): Promise<void> {
 
     // Connect processors to destination via gain node
     const gain = context.createGain();
-    gain.gain.value = 3.0;
+    gain.gain.value = 1.0;
     gain.connect(context.destination);
-
+    synth.connect(gain);
     if (synth.reverbProcessor) {
       synth.reverbProcessor.connect(gain);
     }
