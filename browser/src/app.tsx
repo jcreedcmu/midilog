@@ -73,25 +73,14 @@ function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentS
     }
     return <tr><td>{row.file}</td> {links}</tr>;
   });
-  const isPaused = playback?.pausedAt_ms !== undefined;
-  const hasPlayback = playback !== undefined;
   return <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
     <div style={{ flex: 1, overflowY: 'auto', borderBottom: '1px solid #ccc' }}>
       <table>{rows}</table>
     </div>
     <div style={{ flexShrink: 0 }}>
-      <div style={{ padding: 8 }}>
-        {hasPlayback && (
-          <button
-            style={{ fontWeight: 'bold' }}
-            onClick={() => dispatch({ t: isPaused ? 'resume' : 'pause' })}>
-            {isPaused ? 'Play' : 'Pause'}
-          </button>
-        )}
-      </div>
       <canvas
         ref={cref}
-        style={{ width: '100%', height: '300px', border: '1px solid black', touchAction: 'none' }}
+        style={{ width: '100%', height: '300px', border: '1px solid black', touchAction: 'none', cursor: 'pointer' }}
         onPointerDown={canvasHandlers.onPointerDown}
         onPointerMove={canvasHandlers.onPointerMove}
         onPointerUp={canvasHandlers.onPointerUp}
@@ -289,23 +278,28 @@ function App(props: AppProps): JSX.Element {
     }
   };
 
-  const dragRef = useRef<{ startX: number } | null>(null);
+  const dragRef = useRef<{ startX: number, didDrag: boolean } | null>(null);
   const MS_PER_PIXEL = 10; // inverse of pixel_of_ms = 1/10
 
   const canvasHandlers: CanvasHandlers = {
     onPointerDown: (e: PointerEvent) => {
-      dragRef.current = { startX: e.clientX };
+      dragRef.current = { startX: e.clientX, didDrag: false };
       (e.target as Element).setPointerCapture(e.pointerId);
     },
     onPointerMove: (e: PointerEvent) => {
       if (dragRef.current === null) return;
       const deltaX = e.clientX - dragRef.current.startX;
       if (deltaX !== 0) {
+        dragRef.current.didDrag = true;
         dispatch({ t: 'seek', delta_ms: -deltaX * MS_PER_PIXEL });
         dragRef.current.startX = e.clientX;
       }
     },
     onPointerUp: (e: PointerEvent) => {
+      if (dragRef.current !== null && !dragRef.current.didDrag && state.playback !== undefined) {
+        const isPaused = state.playback.pausedAt_ms !== undefined;
+        dispatch({ t: isPaused ? 'resume' : 'pause' });
+      }
       dragRef.current = null;
     }
   };
