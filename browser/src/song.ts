@@ -1,4 +1,5 @@
 export type Song = {
+  uuid?: string,
   start: string, // date
   events: SongEvent[],
 };

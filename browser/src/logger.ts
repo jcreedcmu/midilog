@@ -41,7 +41,11 @@ async function go() {
     const index: Index = JSON.parse(ijson);
 
     const onSave = async (events: SongEvent[]) => {
-      const payload: Song = { start: new Date().toJSON(), events };
+      const payload: Song = {
+        uuid: crypto.randomUUID(),
+        start: new Date().toJSON(),
+        events
+      };
       const req = new Request('/api/save', {
         method: 'POST',
         body: JSON.stringify(payload),

@@ -79,7 +79,7 @@ type CanvasHandlers = {
   onPointerUp: (e: PointerEvent) => void;
 };
 
-function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentSong: SongIx | undefined, playback: Playback | undefined, canvasHandlers: CanvasHandlers, pendingEvents: SongEvent[], onSave: () => void): JSX.Element {
+function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentSong: SongIx | undefined, playback: Playback | undefined, canvasHandlers: CanvasHandlers, pendingEvents: SongEvent[], onSave: () => void, onDiscard: () => void): JSX.Element {
   const rows: JSX.Element[] = index.map(row => {
     const links: JSX.Element[] = [];
     for (let i = 0; i < row.lines; i++) {
@@ -96,6 +96,7 @@ function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentS
   return <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
     <div style={{ padding: 8, borderBottom: '1px solid #ccc' }}>
       <button onClick={onSave}>save</button>
+      <button onClick={onDiscard} style={{ marginLeft: 8 }}>discard</button>
       <span style={{ marginLeft: 8 }}>{pendingEvents.length} events</span>
     </div>
     <div style={{ flex: 1, overflowY: 'auto', borderBottom: '1px solid #ccc' }}>
@@ -200,6 +201,9 @@ function App(props: AppProps): JSX.Element {
   );
 
   const playCallback: PlayCallback = async (file, ix) => {
+    // Silence any currently playing notes before loading new song
+    allNotesOff(output);
+
     const lines = (await getText(`/log/${file}`)).split('\n');
     const song = timedSong(JSON.parse(lines[ix]));
     const nSong = noteSong(song);
@@ -317,6 +321,10 @@ function App(props: AppProps): JSX.Element {
     dispatch({ t: 'clearPendingEvents' });
   };
 
+  const handleDiscard = () => {
+    dispatch({ t: 'clearPendingEvents' });
+  };
+
   const dragRef = useRef<{ startX: number, didDrag: boolean } | null>(null);
   const MS_PER_PIXEL = 10; // inverse of pixel_of_ms = 1/10
 
@@ -343,7 +351,7 @@ function App(props: AppProps): JSX.Element {
     }
   };
 
-  return renderIndex(index, dispatch, cref, state.songIx, state.playback, canvasHandlers, state.pendingEvents, handleSave);
+  return renderIndex(index, dispatch, cref, state.songIx, state.playback, canvasHandlers, state.pendingEvents, handleSave, handleDiscard);
 }
 
 function scheduleNextCallback(s: AppState, dispatch: Dispatch): AppState {
