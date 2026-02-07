@@ -40,7 +40,6 @@ export type Action =
   | { t: 'none' }
   | { t: 'playFile', file: string, ix: number }
   | { t: 'playNote', message: number[], atTime_ms: number, newIx: number | undefined }
-  | { t: 'panic' }
   | { t: 'idle' }
   | { t: 'pause' }
   | { t: 'resume' }
@@ -77,12 +76,11 @@ function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentS
       <div style={{ padding: 8 }}>
         {hasPlayback && (
           <button
-            style={{ marginRight: 8, fontWeight: 'bold' }}
+            style={{ fontWeight: 'bold' }}
             onClick={() => dispatch({ t: isPaused ? 'resume' : 'pause' })}>
             {isPaused ? 'Play' : 'Pause'}
           </button>
         )}
-        <button onClick={() => dispatch({ t: 'panic' })}>Panic</button>
       </div>
       <canvas
         ref={cref} style={{ width: '100%', height: '300px', border: '1px solid black' }} />
@@ -183,15 +181,6 @@ function App(props: AppProps): JSX.Element {
     switch (action.t) {
       case 'playFile':
         playCallback(action.file, action.ix);
-        break;
-      case 'panic':
-        if (state.playback !== undefined) {
-          clearTimeout(state.playback.timeoutId);
-          setState(s => {
-            return { playback: undefined, song: undefined, songIx: undefined, nSong: undefined };
-          });
-        }
-        allNotesOff(output);
         break;
       case 'none':
         break;
