@@ -36,7 +36,7 @@ async function go() {
     const midi = await navigator.requestMIDIAccess({ sysex: true });
     const input = getInput(midi);
     const midiOutput = getOutput(midi);
-    const output = createAudioOutput(midiOutput, '/soundfont/gm.sf2');
+    const output = createAudioOutput(midiOutput, '/soundfont/gm-good.sf3');
 
     console.log(`success, midi output: ${midiOutput ? 'found' : 'not found'}`);
     const ijson = await getText('/logIndex.json');
