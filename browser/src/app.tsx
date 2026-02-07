@@ -1,5 +1,5 @@
 import { render } from 'preact';
-import { useState } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 import { pitchColor, Index, NoteSong, TimedSong, noteSong, timedSong, pitchName } from './song';
 import { CanvasInfo, CanvasRef, useCanvas } from './use-canvas';
 import { allNotesOff, getText, unreachable } from './util';
@@ -43,6 +43,7 @@ export type Action =
   | { t: 'idle' }
   | { t: 'pause' }
   | { t: 'resume' }
+  | { t: 'seek', delta_ms: number }
   ;
 
 export type Dispatch = (action: Action) => void;
@@ -52,7 +53,13 @@ export function init(props: AppProps) {
   render(<App {...props} />, document.querySelector('.app') as any);
 }
 
-function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentSong: SongIx | undefined, playback: Playback | undefined): JSX.Element {
+type CanvasHandlers = {
+  onPointerDown: (e: PointerEvent) => void;
+  onPointerMove: (e: PointerEvent) => void;
+  onPointerUp: (e: PointerEvent) => void;
+};
+
+function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentSong: SongIx | undefined, playback: Playback | undefined, canvasHandlers: CanvasHandlers): JSX.Element {
   const rows: JSX.Element[] = index.map(row => {
     const links: JSX.Element[] = [];
     for (let i = 0; i < row.lines; i++) {
@@ -83,7 +90,13 @@ function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentS
         )}
       </div>
       <canvas
-        ref={cref} style={{ width: '100%', height: '300px', border: '1px solid black' }} />
+        ref={cref}
+        style={{ width: '100%', height: '300px', border: '1px solid black', touchAction: 'none' }}
+        onPointerDown={canvasHandlers.onPointerDown}
+        onPointerMove={canvasHandlers.onPointerMove}
+        onPointerUp={canvasHandlers.onPointerUp}
+        onPointerLeave={canvasHandlers.onPointerUp}
+      />
     </div>
   </div>;
 }
@@ -94,6 +107,15 @@ function playNextNote(song: TimedSong, playhead: Playhead): Action {
   const event = song.events[eventIndex];
   const newIx = eventIndex + 1 < song.events.length ? eventIndex + 1 : undefined;
   return { t: 'playNote', message: event.message, atTime_ms: event.time_ms, newIx };
+}
+
+function findEventIndexAtTime(song: TimedSong, time_ms: number): number {
+  for (let i = 0; i < song.events.length; i++) {
+    if (song.events[i].time_ms >= time_ms) {
+      return i;
+    }
+  }
+  return song.events.length - 1;
 }
 
 function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
@@ -239,11 +261,56 @@ function App(props: AppProps): JSX.Element {
           return scheduleNextCallback(newState, dispatch);
         });
         break;
+      case 'seek':
+        setState(s => {
+          if (s.playback === undefined || s.song === undefined || s.playback.pausedAt_ms === undefined)
+            return s; // Only allow seeking when paused
+          const { playback, song } = s;
+          const currentPosition = playback.playhead.fastNowTime_ms - playback.startTime_ms;
+          const songDuration = song.events[song.events.length - 1].time_ms;
+          const newPosition = Math.max(0, Math.min(songDuration, currentPosition + action.delta_ms));
+          const actualDelta = newPosition - currentPosition;
+          const newEventIndex = findEventIndexAtTime(song, newPosition);
+          return {
+            ...s,
+            playback: {
+              ...playback,
+              startTime_ms: playback.startTime_ms - actualDelta,
+              playhead: {
+                ...playback.playhead,
+                eventIndex: newEventIndex
+              }
+            }
+          };
+        });
+        break;
       default:
         unreachable(action);
     }
   };
-  return renderIndex(index, dispatch, cref, state.songIx, state.playback);
+
+  const dragRef = useRef<{ startX: number } | null>(null);
+  const MS_PER_PIXEL = 10; // inverse of pixel_of_ms = 1/10
+
+  const canvasHandlers: CanvasHandlers = {
+    onPointerDown: (e: PointerEvent) => {
+      dragRef.current = { startX: e.clientX };
+      (e.target as Element).setPointerCapture(e.pointerId);
+    },
+    onPointerMove: (e: PointerEvent) => {
+      if (dragRef.current === null) return;
+      const deltaX = e.clientX - dragRef.current.startX;
+      if (deltaX !== 0) {
+        dispatch({ t: 'seek', delta_ms: -deltaX * MS_PER_PIXEL });
+        dragRef.current.startX = e.clientX;
+      }
+    },
+    onPointerUp: (e: PointerEvent) => {
+      dragRef.current = null;
+    }
+  };
+
+  return renderIndex(index, dispatch, cref, state.songIx, state.playback, canvasHandlers);
 }
 
 function scheduleNextCallback(s: AppState, dispatch: Dispatch): AppState {
