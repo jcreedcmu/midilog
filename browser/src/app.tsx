@@ -69,19 +69,22 @@ function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentS
   });
   const isPaused = playback?.pausedAt_ms !== undefined;
   const hasPlayback = playback !== undefined;
-  rows.push(<tr><td>
-    <button onClick={() => dispatch({ t: 'panic' })}>Panic</button>
-    {hasPlayback && (
-      <button
-        style={{ marginLeft: 8 }}
-        onClick={() => dispatch({ t: isPaused ? 'resume' : 'pause' })}>
-        {isPaused ? 'Play' : 'Pause'}
-      </button>
-    )}
-  </td></tr>);
-  return <div><table>{rows}</table>
+  return <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ flexShrink: 0, padding: 8 }}>
+      {hasPlayback && (
+        <button
+          style={{ marginRight: 8, fontWeight: 'bold' }}
+          onClick={() => dispatch({ t: isPaused ? 'resume' : 'pause' })}>
+          {isPaused ? 'Play' : 'Pause'}
+        </button>
+      )}
+      <button onClick={() => dispatch({ t: 'panic' })}>Panic</button>
+    </div>
+    <div style={{ flex: 1, overflowY: 'auto', borderBottom: '1px solid #ccc' }}>
+      <table>{rows}</table>
+    </div>
     <canvas
-      ref={cref} style={{ width: '100%', height: `300px`, border: '1px solid black' }} />
+      ref={cref} style={{ width: '100%', height: '300px', flexShrink: 0, border: '1px solid black' }} />
   </div>;
 }
 
@@ -167,14 +170,11 @@ function App(props: AppProps): JSX.Element {
 
     const startTime_ms = window.performance.now();
     const playhead: Playhead = { eventIndex: 0, nowTime_ms: startTime_ms, fastNowTime_ms: startTime_ms };
-    const nextNoteAction = playNextNote(song, playhead);
-    const timeoutId = window.setTimeout(() => dispatch(nextNoteAction), 0);
 
+    // Load in paused state - user must click Play to start
     setState(s => {
-      return { song: song, nSong: nSong, songIx: { file, ix }, playback: { timeoutId, playhead, startTime_ms, pausedAt_ms: undefined } };
+      return { song: song, nSong: nSong, songIx: { file, ix }, playback: { timeoutId: 0, playhead, startTime_ms, pausedAt_ms: startTime_ms } };
     });
-
-
   };
 
   const dispatch: Dispatch = (action) => {
