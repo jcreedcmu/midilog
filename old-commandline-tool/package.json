@@ -1,0 +1,16 @@
+{
+  "name": "midilog",
+  "version": "1.0.0",
+  "description": "This is an attempt to make some very light-weight, convenient way of recording and playing back midi from a keyboard.",
+  "main": "midilog.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "date-format": "^4.0.14",
+    "midi": "^2.0.0",
+    "nanotimer": "^0.3.15"
+  }
+}

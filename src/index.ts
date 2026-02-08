@@ -7,8 +7,8 @@ const app = express();
 app.use(express.json());
 
 console.log(__dirname);
-app.use('/log', serveIndex(__dirname + '/../../log'));
-app.use('/log', express.static(__dirname + '/../../log'));
+app.use('/log', serveIndex(__dirname + '/../log'));
+app.use('/log', express.static(__dirname + '/../log'));
 
 app.get('/js/logger.js', (req, res) => { res.sendFile(path.resolve(__dirname, 'logger.js')) });
 app.get('/js/logger.js.map', (req, res) => { res.sendFile(path.resolve(__dirname, 'logger.js.map')) });
@@ -23,12 +23,12 @@ app.get('/js/spessasynth_processor.min.js', (req, res) => {
     }
   });
 });
-app.use('/soundfont', express.static(path.resolve(__dirname, '../../soundfont')));
+app.use('/soundfont', express.static(path.resolve(__dirname, '../soundfont')));
 app.use('/icons', express.static(path.resolve(__dirname, '../public/icons')));
 app.get('/logIndex.json', (req, res) => {
 
   const metadata: { file: string, lines: number }[] = [];
-  const logDir = path.resolve(__dirname, '../../log');
+  const logDir = path.resolve(__dirname, '../log');
   const files = fs.readdirSync(logDir);
   files.forEach(file => {
     const lines = fs.readFileSync(path.join(logDir, file), 'utf8').split('\n').filter(x => x.length > 0).length
@@ -43,7 +43,7 @@ app.post('/api/save', (req, res) => {
   const basename = (new Date()).toJSON().replace(/T.*/, '');
   console.log(JSON.stringify(req.body, null, 2));
   fs.appendFileSync(
-    path.resolve(__dirname, `../../log/${basename}.json`),
+    path.resolve(__dirname, `../log/${basename}.json`),
     JSON.stringify(req.body) + '\n',
     'utf8'
   );
