@@ -1,5 +1,5 @@
-import { render } from 'preact';
-import { useRef, useState } from 'preact/hooks';
+import { createRoot } from 'react-dom/client';
+import { useRef, useState } from 'react';
 import { pitchColor, Index, NoteSong, TimedSong, noteSong, timedSong, pitchName, SongEvent } from './song';
 import { CanvasInfo, CanvasRef, useCanvas } from './use-canvas';
 import { getText, unreachable } from './util';
@@ -65,7 +65,8 @@ export type SongIx = { file: string, ix: number };
 
 export function init(props: InitProps): AppHandle {
   const dispatchRef: { current: Dispatch | null } = { current: null };
-  render(<App {...props} dispatchRef={dispatchRef} />, document.querySelector('.app') as any);
+  const root = createRoot(document.querySelector('.app')!);
+  root.render(<App {...props} dispatchRef={dispatchRef} />);
   return {
     dispatch: (action: Action) => {
       if (dispatchRef.current) {
