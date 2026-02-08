@@ -224,7 +224,7 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
   d.fillRect(0, 0, cw, ch);
   const fontHeight = 12;
 
-  d.font = `bold ${fontHeight}px sans-serif`;
+  d.font = `bold ${fontHeight}px 'Roboto Condensed', sans-serif`;
   d.textBaseline = 'middle';
   d.textAlign = 'right';
   const currentTime_ms = playback ? playback.playhead.fastNowTime_ms - playback.startTime_ms : 0;

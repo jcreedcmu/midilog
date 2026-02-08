@@ -86,19 +86,20 @@ export function noteSong(timedSong: TimedSong): NoteSong {
   return { start: timedSong.start, events };
 }
 
+// https://harmonizer.evilmartians.com/#fZNNb8IwDIb_i3etpny0CfQ2mHYal8Ft2iGUNK0oTZe2aAPx35egDZJOSm_xaz92XqdnOErT17qFHCfQyKNsesjfz9CKg4QcMEKQQKHbwYh-sEkI2WNl9EFAjh4RYRkjGbp97E9dig7ydmyaS3KDkQlsHrImKBJD0QmKcx-F8Yx7JJTGUOkExbIAxWlKPVh0qmyCyrCPIikLxuIxFJtOFXhF0ZUVA_CoQ2SGSbR8Ft0VwTywOLr2efwN4XDtiP5nfSRQjTJ4mG9yZ6GiVY09kcxrtzC6Pcm7yJAnrsZ-EMYrnfvqZjSfo657rxpTP2G9__a6Il96Oo3GqyNB25exqPpa3GVKkLtVL4ehbpW92flm0ErvZGNrRFe4gl1tZDHYP9TFbbhUG71Q8GfSb_Qgvmxoq5a60ea1VpX1GR7KsrxHn4XZuyC6rmOrrllr64Z7qG4_NmfdicLhOgqXyw8
 export const pitchColor = [
-  "#7882e2",
-  "#38396e",
-  "#df4f48",
-  "#696800",
-  "#ffff78",
-  "#f47937",
-  "#782a00",
-  "#71d256",
-  "#790061",
-  "#d343b6",
-  "#075152",
-  "#75c4c5",
+  "#3e8aff", // C  blue
+  "#003aba", // C# dark blue
+  "#ff6b66", // D  red
+  "#b28800", // Eb dark yellow
+  "#ffc600", // E yellow
+  "#f68000", // F orange
+  "#763a00", // F# dark orange
+  "#6eb200", // G green
+  "#b100d1", // Ab dark magenta
+  "#ea66ff", // A magenta
+  "#00767d", // Bb dark cyan
+  "#00b2bb", // B cyan
 ];
 
 export const pitchName = [
