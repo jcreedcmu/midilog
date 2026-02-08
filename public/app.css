@@ -110,13 +110,22 @@ html, body {
 /* Files panel */
 .files-panel {
   padding: 12px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  overflow: hidden;
+}
+
+.files-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .files-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 12px;
 }
 
@@ -125,7 +134,10 @@ html, body {
   color: #888;
   font-weight: normal;
   padding: 4px 8px;
-  border-bottom: 1px solid #ddd;
+  box-shadow: inset 0 -1px 0 #ddd;
+  position: sticky;
+  top: 0;
+  background-color: #f5f5f5;
 }
 
 .files-row {

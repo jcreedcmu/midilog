@@ -135,10 +135,11 @@ function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: 
   return (
     <div className="files-panel">
       <h3 className="panel-header">Entries</h3>
-      <table className="files-table">
-        <thead>
-          <tr><th>date</th><th>#</th><th>dur</th></tr>
-        </thead>
+      <div className="files-scroll">
+        <table className="files-table">
+          <thead>
+            <tr><th>date</th><th>#</th><th>dur</th></tr>
+          </thead>
         <tbody>
           {rows.map(({ file, ix, duration_ms }) => {
             const isActive = currentSong && currentSong.file === file && currentSong.ix === ix;
@@ -155,7 +156,8 @@ function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: 
             );
           })}
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   );
 }
