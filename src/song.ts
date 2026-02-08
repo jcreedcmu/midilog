@@ -31,7 +31,7 @@ export type TimedSongEvent = {
   time_ms: number,
 }
 
-export type Index = { file: string, lines: number }[];
+export type Index = { file: string, lines: number, durations_ms: number[] }[];
 
 export function timedSong(song: Song): TimedSong {
   let time_ms: number = 0;

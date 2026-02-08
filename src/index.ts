@@ -27,12 +27,20 @@ app.use('/soundfont', express.static(path.resolve(__dirname, '../soundfont')));
 app.use('/icons', express.static(path.resolve(__dirname, '../public/icons')));
 app.get('/logIndex.json', (req, res) => {
 
-  const metadata: { file: string, lines: number }[] = [];
+  const metadata: { file: string, lines: number, durations_ms: number[] }[] = [];
   const logDir = path.resolve(__dirname, '../log');
   const files = fs.readdirSync(logDir);
   files.forEach(file => {
-    const lines = fs.readFileSync(path.join(logDir, file), 'utf8').split('\n').filter(x => x.length > 0).length
-    metadata.push({ file, lines });
+    const chunks = fs.readFileSync(path.join(logDir, file), 'utf8').split('\n').filter(x => x.length > 0);
+    const durations_ms = chunks.map(line => {
+      const chunk = JSON.parse(line);
+      let total_us = 0;
+      for (const event of chunk.events) {
+        total_us += event.delta.midi_us;
+      }
+      return total_us / 1000;
+    });
+    metadata.push({ file, lines: chunks.length, durations_ms });
   });
   res.json(metadata);
 

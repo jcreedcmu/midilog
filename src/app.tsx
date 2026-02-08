@@ -111,12 +111,19 @@ function SidebarButton({ icon, active, onClick }: { icon: React.ReactNode, activ
   );
 }
 
+function formatDuration(ms: number): string {
+  const totalSec = Math.round(ms / 1000);
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return `${min}:${sec.toString().padStart(2, '0')}`;
+}
+
 // Files panel
 function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: Dispatch, currentSong: SongIx | undefined }) {
-  const rows: { file: string, ix: number }[] = [];
+  const rows: { file: string, ix: number, duration_ms: number }[] = [];
   for (const row of index) {
     for (let i = 0; i < row.lines; i++) {
-      rows.push({ file: row.file, ix: i });
+      rows.push({ file: row.file, ix: i, duration_ms: row.durations_ms[i] });
     }
   }
   return (
@@ -124,10 +131,10 @@ function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: 
       <h3 className="panel-header">Entries</h3>
       <table className="files-table">
         <thead>
-          <tr><th>date</th><th>#</th></tr>
+          <tr><th>date</th><th>#</th><th>dur</th></tr>
         </thead>
         <tbody>
-          {rows.map(({ file, ix }) => {
+          {rows.map(({ file, ix, duration_ms }) => {
             const isActive = currentSong && currentSong.file === file && currentSong.ix === ix;
             return (
               <tr
@@ -135,8 +142,9 @@ function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: 
                 className={cx('files-row', isActive && 'active')}
                 onClick={() => dispatch({ t: 'playFile', file, ix })}
               >
-                <td>{file}</td>
+                <td>{file.replace(/\.json$/, '')}</td>
                 <td>{ix}</td>
+                <td>{formatDuration(duration_ms)}</td>
               </tr>
             );
           })}
