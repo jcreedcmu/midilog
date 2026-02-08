@@ -82,7 +82,7 @@ export function init(props: InitProps): AppHandle {
 function FolderIcon({ active }: { active: boolean }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? '#fff' : '#888'}>
-      <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+      <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
     </svg>
   );
 }
@@ -90,7 +90,7 @@ function FolderIcon({ active }: { active: boolean }) {
 function RecordIcon({ active }: { active: boolean }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? '#fff' : '#888'}>
-      <circle cx="12" cy="12" r="8" fill={active ? '#f44' : '#844'}/>
+      <circle cx="12" cy="12" r="8" fill={active ? '#f44' : '#844'} />
     </svg>
   );
 }
@@ -100,15 +100,15 @@ function PianoIcon({ active }: { active: boolean }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24">
       {/* White keys */}
-      <rect x="2" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5"/>
-      <rect x="6" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5"/>
-      <rect x="10" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5"/>
-      <rect x="14" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5"/>
-      <rect x="18" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5"/>
+      <rect x="2" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5" />
+      <rect x="6" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5" />
+      <rect x="10" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5" />
+      <rect x="14" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5" />
+      <rect x="18" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5" />
       {/* Black keys */}
-      <rect x="5" y="6" width="2.5" height="7" fill={active ? '#333' : '#555'}/>
-      <rect x="9" y="6" width="2.5" height="7" fill={active ? '#333' : '#555'}/>
-      <rect x="16.5" y="6" width="2.5" height="7" fill={active ? '#333' : '#555'}/>
+      <rect x="5" y="6" width="2.5" height="7" fill={active ? '#333' : '#555'} />
+      <rect x="9" y="6" width="2.5" height="7" fill={active ? '#333' : '#555'} />
+      <rect x="16.5" y="6" width="2.5" height="7" fill={active ? '#333' : '#555'} />
     </svg>
   );
 }
@@ -512,7 +512,7 @@ function App(props: AppProps): JSX.Element {
         fontWeight: 'bold',
         flexShrink: 0,
       }}>
-        MIDI notebook
+        midi notebook
       </div>
 
       {/* Main content area */}
