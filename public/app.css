@@ -253,6 +253,64 @@ html, body {
   opacity: 0.5;
 }
 
+/* Tags panel */
+.tag-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.tag-hint {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 12px;
+}
+
+.tag-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tag-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+  gap: 8px;
+}
+
+.tag-label {
+  font-weight: bold;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.tag-range {
+  font-size: 11px;
+  color: #888;
+  flex: 1;
+  min-width: 0;
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  color: #c44;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.tag-remove:hover {
+  color: #f00;
+}
+
 /* Piano roll */
 .piano-roll-canvas {
   width: 100%;

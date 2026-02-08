@@ -1,12 +1,20 @@
+export type Tag = {
+  label: string;
+  start_ms: number;  // offset into song
+  end_ms: number;
+};
+
 export type Song = {
   uuid?: string,
   start: string, // date
   events: SongEvent[],
+  tags?: Tag[],
 };
 
 export type TimedSong = {
   start: string, // date
   events: TimedSongEvent[],
+  tags?: Tag[],
 };
 
 export type NoteEvent =
@@ -42,7 +50,7 @@ export function timedSong(song: Song): TimedSong {
     const rv = { message: event.message, time_ms: time_ms };
     return rv;
   });
-  return { start: song.start, events };
+  return { start: song.start, events, tags: song.tags };
 }
 
 export function noteSong(timedSong: TimedSong): NoteSong {
