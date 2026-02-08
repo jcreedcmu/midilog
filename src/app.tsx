@@ -206,9 +206,11 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
   const { playback } = state;
 
   const pixel_of_ms = 1 / 10;
-  const pixel_of_pitch = 3;
-  const vert_offset = 300;
+  const pixel_of_pitch = 10;
+  const vert_offset = 1000;
+  const note_pitch_thickness = 1;
   const [cw, ch] = [ci.size.x, ci.size.y];
+  const shadowColor = '#335';
 
   let playHeadPosition_px = 0;
   if (playback !== undefined) {
@@ -235,16 +237,16 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
         const isActive = currentTime_ms >= event.time_ms && currentTime_ms <= event.time_ms + event.dur_ms;
         if (isActive) {
           d.save();
-          d.shadowColor = 'black';
+          d.shadowColor = shadowColor;
           d.shadowOffsetX = 2;
           d.shadowOffsetY = 2;
-          d.shadowBlur = 8;
+          d.shadowBlur = 6;
           d.fillStyle = pitchColor[event.pitch % 12];
           d.fillRect(
             xshift + event.time_ms * pixel_of_ms,
             vert_offset - pixel_of_pitch * event.pitch,
             event.dur_ms * pixel_of_ms,
-            pixel_of_pitch * 2);
+            pixel_of_pitch * note_pitch_thickness);
           d.restore();
         }
       }
@@ -253,17 +255,22 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
     state.nSong.events.forEach(event => {
       if (event.t == 'note') {
         d.fillStyle = pitchColor[event.pitch % 12];
-        d.fillRect(xshift + event.time_ms * pixel_of_ms, vert_offset - pixel_of_pitch * event.pitch, event.dur_ms * pixel_of_ms, pixel_of_pitch * 2);
+        d.fillRect(xshift + event.time_ms * pixel_of_ms, vert_offset - pixel_of_pitch * event.pitch, event.dur_ms * pixel_of_ms, pixel_of_pitch * note_pitch_thickness);
       }
     });
     // Draw note labels
+    const textXshift = -1;
     state.nSong.events.forEach(event => {
       if (event.t == 'note') {
-        d.fillStyle = 'black';
-        d.fillText(pitchName[event.pitch % 12], xshift + event.time_ms * pixel_of_ms, 1 + vert_offset - pixel_of_pitch * (event.pitch - 1));
+        d.fillStyle = shadowColor;
+        d.fillText(pitchName[event.pitch % 12],
+          textXshift + xshift + event.time_ms * pixel_of_ms,
+          1 + vert_offset - pixel_of_pitch * event.pitch + pixel_of_pitch * note_pitch_thickness / 2);
 
         d.fillStyle = pitchColor[event.pitch % 12];
-        d.fillText(pitchName[event.pitch % 12], -1 + xshift + event.time_ms * pixel_of_ms, vert_offset - pixel_of_pitch * (event.pitch - 1));
+        d.fillText(pitchName[event.pitch % 12],
+          textXshift + -1 + xshift + event.time_ms * pixel_of_ms,
+          vert_offset - pixel_of_pitch * event.pitch + pixel_of_pitch * note_pitch_thickness / 2);
       }
     });
   }
