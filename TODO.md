@@ -14,7 +14,7 @@
 [ ] delete entry
 [ ] split entry at point
 [ ] insert bar markings manually?
-[ ] duplicate work in cleaning up data statically and dynamically
+[x] duplicate work in cleaning up data statically and dynamically
 [ ] better behavior when we run off the end of a recording
 [ ] visualize start and end of snippet
 [ ] drag breaks if we leave the window

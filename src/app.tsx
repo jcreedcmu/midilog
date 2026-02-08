@@ -227,7 +227,7 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
   const vert_offset = 1000;
   const note_pitch_thickness = 1;
   const [cw, ch] = [ci.size.x, ci.size.y];
-  const shadowColor = '#335';
+  const shadowColor = '#577';
 
   let playHeadPosition_px = 0;
   if (playback !== undefined) {
@@ -249,12 +249,13 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
   const currentTime_ms = playback ? playback.playhead.fastNowTime_ms - playback.startTime_ms : 0;
 
   // draw octave lines
-  d.save();
-  d.fillStyle = '#ccd';
   for (let i = 0; i < 8; i++) {
+    d.save();
+    d.fillStyle = '#bbc';
     d.fillRect(0, vert_offset - pixel_of_pitch * (11 + i * 12), cw, 1);
+    d.fillStyle = '#dde';
+    d.fillRect(0, vert_offset - pixel_of_pitch * (18 + i * 12), cw, 1);
   }
-  d.restore();
 
   if (state.nSong !== undefined) {
     // Draw shadows for active notes first (behind everything)
@@ -264,9 +265,7 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
         if (isActive) {
           d.save();
           d.shadowColor = shadowColor;
-          d.shadowOffsetX = 2;
-          d.shadowOffsetY = 2;
-          d.shadowBlur = 6;
+          d.shadowBlur = 10;
           d.fillStyle = pitchColor[event.pitch % 12];
           d.fillRect(
             xshift + event.time_ms * pixel_of_ms,
@@ -280,8 +279,19 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
     // Draw all note rectangles
     state.nSong.events.forEach(event => {
       if (event.t == 'note') {
+        const x = xshift + event.time_ms * pixel_of_ms;
+        const y = vert_offset - pixel_of_pitch * event.pitch;
+        const w = event.dur_ms * pixel_of_ms;
+        const h = pixel_of_pitch * note_pitch_thickness;
         d.fillStyle = pitchColor[event.pitch % 12];
-        d.fillRect(xshift + event.time_ms * pixel_of_ms, vert_offset - pixel_of_pitch * event.pitch, event.dur_ms * pixel_of_ms, pixel_of_pitch * note_pitch_thickness);
+        d.fillRect(x, y, w, h);
+        const grad = d.createLinearGradient(0, y, 0, y + h);
+        grad.addColorStop(0, 'rgba(255,255,255,0.5)');
+        grad.addColorStop(0.25, 'rgba(255,255,255,0)');
+        grad.addColorStop(0.75, 'rgba(255,255,255,0)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.3)');
+        d.fillStyle = grad;
+        d.fillRect(x, y, w, h);
       }
     });
     // Draw note labels
