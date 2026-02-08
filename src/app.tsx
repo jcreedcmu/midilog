@@ -245,6 +245,15 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
   d.textBaseline = 'middle';
   d.textAlign = 'right';
   const currentTime_ms = playback ? playback.playhead.fastNowTime_ms - playback.startTime_ms : 0;
+
+  // draw octave lines
+  d.save();
+  d.fillStyle = '#ccd';
+  for (let i = 0; i < 8; i++) {
+    d.fillRect(0, vert_offset - pixel_of_pitch * (11 + i * 12), cw, 1);
+  }
+  d.restore();
+
   if (state.nSong !== undefined) {
     // Draw shadows for active notes first (behind everything)
     state.nSong.events.forEach(event => {
