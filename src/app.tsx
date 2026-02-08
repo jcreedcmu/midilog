@@ -113,28 +113,35 @@ function SidebarButton({ icon, active, onClick }: { icon: React.ReactNode, activ
 
 // Files panel
 function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: Dispatch, currentSong: SongIx | undefined }) {
+  const rows: { file: string, ix: number }[] = [];
+  for (const row of index) {
+    for (let i = 0; i < row.lines; i++) {
+      rows.push({ file: row.file, ix: i });
+    }
+  }
   return (
     <div className="files-panel">
       <h3 className="panel-header">Entries</h3>
-      {index.map(row => (
-        <div key={row.file} className="file-group">
-          <div className="file-name">{row.file}</div>
-          <div className="file-buttons">
-            {Array.from({ length: row.lines }, (_, i) => {
-              const isActive = currentSong && currentSong.file === row.file && currentSong.ix === i;
-              return (
-                <button
-                  key={i}
-                  className={cx('file-button', isActive && 'active')}
-                  onClick={() => dispatch({ t: 'playFile', file: row.file, ix: i })}
-                >
-                  {i}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+      <table className="files-table">
+        <thead>
+          <tr><th>date</th><th>#</th></tr>
+        </thead>
+        <tbody>
+          {rows.map(({ file, ix }) => {
+            const isActive = currentSong && currentSong.file === file && currentSong.ix === ix;
+            return (
+              <tr
+                key={`${file}-${ix}`}
+                className={cx('files-row', isActive && 'active')}
+                onClick={() => dispatch({ t: 'playFile', file, ix })}
+              >
+                <td>{file}</td>
+                <td>{ix}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

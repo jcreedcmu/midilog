@@ -83,33 +83,33 @@ html, body {
   height: 100%;
 }
 
-.file-group {
-  margin-bottom: 12px;
+.files-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
 }
 
-.file-name {
-  font-size: 12px;
+.files-table th {
+  text-align: left;
   color: #888;
-  margin-bottom: 4px;
-}
-
-.file-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.file-button {
-  cursor: pointer;
-  background-color: #e0e0e0;
-  color: #333;
-  border: none;
-  border-radius: 4px;
+  font-weight: normal;
   padding: 4px 8px;
-  font-size: 12px;
+  border-bottom: 1px solid #ddd;
 }
 
-.file-button.active {
+.files-row {
+  cursor: pointer;
+}
+
+.files-row td {
+  padding: 4px 8px;
+}
+
+.files-row:hover {
+  background-color: #e0e0e0;
+}
+
+.files-row.active {
   background-color: #4a9eff;
   color: #fff;
 }
