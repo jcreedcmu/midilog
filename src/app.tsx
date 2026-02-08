@@ -561,7 +561,11 @@ function App(props: AppProps): JSX.Element {
         <span>midi notebook</span>
         {state.songIx && (state.songIx.file.replace(/\.json$/, '') + '/' + state.songIx.ix)}
         <div className="transport">
-          {state.playback && formatDuration(state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms)}
+          {state.playback && state.song && (
+            formatDuration(state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms)
+            + '/' +
+            formatDuration(state.song.events[state.song.events.length - 1].time_ms)
+          )}
           <button className="transport-btn" onClick={() => dispatch({ t: 'seekToStart' })} disabled={!state.playback}>
             <img src="/icons/skip-back.svg" width={18} height={18} />
           </button>
