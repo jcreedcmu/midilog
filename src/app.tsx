@@ -350,7 +350,10 @@ function App(props: AppProps): JSX.Element {
     songIx: undefined,
     pendingEvents: []
   });
-  const [activePanel, setActivePanel] = useState<SidebarPanel>('files');
+  const [activePanel, setActivePanel] = useState<SidebarPanel | null>('files');
+  const togglePanel = (panel: SidebarPanel) => {
+    setActivePanel(prev => prev === panel ? null : panel);
+  };
   const [cref, mc] = useCanvas(
     state, _renderMainCanvas,
     [state.playback?.playhead.fastNowTime_ms, state.playback, state.song],
@@ -573,45 +576,47 @@ function App(props: AppProps): JSX.Element {
       </div>
 
       <div className="main-content">
-        <div className="sidebar-icons">
-          <SidebarButton
-            icon={<Icon src="/icons/folder.svg" active={activePanel === 'files'} />}
-            active={activePanel === 'files'}
-            onClick={() => setActivePanel('files')}
-          />
-          <SidebarButton
-            icon={<Icon src="/icons/record.svg" active={activePanel === 'recording'} />}
-            active={activePanel === 'recording'}
-            onClick={() => setActivePanel('recording')}
-          />
-          <SidebarButton
-            icon={<Icon src="/icons/piano.svg" active={activePanel === 'settings'} />}
-            active={activePanel === 'settings'}
-            onClick={() => setActivePanel('settings')}
-          />
-        </div>
+        <canvas
+          ref={cref}
+          className="piano-roll-canvas"
+          onPointerDown={canvasHandlers.onPointerDown}
+          onPointerMove={canvasHandlers.onPointerMove}
+          onPointerUp={canvasHandlers.onPointerUp}
+          onPointerLeave={canvasHandlers.onPointerUp}
+        />
 
-        <div className="sidebar-panel">
-          {activePanel === 'files' && (
-            <FilesPanel index={index} dispatch={dispatch} currentSong={state.songIx} />
-          )}
-          {activePanel === 'recording' && (
-            <RecordingPanel pendingEvents={state.pendingEvents} onSave={handleSave} onDiscard={handleDiscard} />
-          )}
-          {activePanel === 'settings' && (
-            <SettingsPanel outputMode={output.mode} hasMidi={output.midiOutput !== null} dispatch={dispatch} />
-          )}
-        </div>
+        <div className="sidebar-overlay">
+          <div className="sidebar-icons">
+            <SidebarButton
+              icon={<Icon src="/icons/folder.svg" active={activePanel === 'files'} />}
+              active={activePanel === 'files'}
+              onClick={() => togglePanel('files')}
+            />
+            <SidebarButton
+              icon={<Icon src="/icons/record.svg" active={activePanel === 'recording'} />}
+              active={activePanel === 'recording'}
+              onClick={() => togglePanel('recording')}
+            />
+            <SidebarButton
+              icon={<Icon src="/icons/piano.svg" active={activePanel === 'settings'} />}
+              active={activePanel === 'settings'}
+              onClick={() => togglePanel('settings')}
+            />
+          </div>
 
-        <div className="piano-roll-container">
-          <canvas
-            ref={cref}
-            className="piano-roll-canvas"
-            onPointerDown={canvasHandlers.onPointerDown}
-            onPointerMove={canvasHandlers.onPointerMove}
-            onPointerUp={canvasHandlers.onPointerUp}
-            onPointerLeave={canvasHandlers.onPointerUp}
-          />
+          {activePanel !== null && (
+            <div className="sidebar-panel">
+              {activePanel === 'files' && (
+                <FilesPanel index={index} dispatch={dispatch} currentSong={state.songIx} />
+              )}
+              {activePanel === 'recording' && (
+                <RecordingPanel pendingEvents={state.pendingEvents} onSave={handleSave} onDiscard={handleDiscard} />
+              )}
+              {activePanel === 'settings' && (
+                <SettingsPanel outputMode={output.mode} hasMidi={output.midiOutput !== null} dispatch={dispatch} />
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

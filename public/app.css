@@ -60,9 +60,24 @@ html, body {
 
 /* Main content */
 .main-content {
-  display: flex;
+  position: relative;
   flex: 1;
   overflow: hidden;
+}
+
+/* Sidebar overlay */
+.sidebar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.sidebar-overlay > * {
+  pointer-events: auto;
 }
 
 /* Sidebar icons */
@@ -95,6 +110,7 @@ html, body {
   border-right: 1px solid #ddd;
   flex-shrink: 0;
   overflow-y: auto;
+  height: 100%;
 }
 
 .panel-content {
@@ -230,13 +246,6 @@ html, body {
 }
 
 /* Piano roll */
-.piano-roll-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
 .piano-roll-canvas {
   width: 100%;
   height: 100%;
