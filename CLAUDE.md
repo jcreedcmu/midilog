@@ -31,8 +31,9 @@ make serve                   # Run server (port 8000, or PORT env var)
 ### Data Format
 MIDI events are stored as JSON lines in `log/YYYY-MM-DD.json`. Each line is a "chunk" (recording session):
 ```json
-{"start": 1513467890123, "events": [{"message": [144,60,64], "delta": {"midi_us": 0, "wall_ms": 0}}, ...]}
+{"uuid": "...", "start": 1513467890123, "events": [{"message": [144,60,64], "delta": {"midi_us": 0, "wall_ms": 0}}, ...]}
 ```
+- `uuid`: Unique identifier for the recording (optional, added to new recordings)
 - `message`: Raw MIDI bytes (e.g., [144, pitch, velocity] for note-on)
 - `delta.midi_us`: Microseconds since previous event (MIDI timestamp)
 - `delta.wall_ms`: Milliseconds since previous event (wall clock)
@@ -49,4 +50,4 @@ The build produces two bundles: `out/index.js` (server) and `out/logger.js` (bro
 Setting the piano to instrument 0 (program change message 192,0) triggers `push.sh` to commit logs. A low/high note plays to indicate success/failure.
 
 ## Node Version
-Uses Node 10.24.1 (see `.nvmrc`).
+Uses Node 20 (see `.nvmrc`).
