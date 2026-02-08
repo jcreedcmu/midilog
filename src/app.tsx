@@ -57,6 +57,8 @@ export type Action =
   | { t: 'pause' }
   | { t: 'resume' }
   | { t: 'seek', delta_ms: number }
+  | { t: 'seekToStart' }
+  | { t: 'seekToEnd' }
   | { t: 'addPendingEvent', event: SongEvent }
   | { t: 'clearPendingEvents' }
   | { t: 'setOutputMode', mode: OutputMode }
@@ -424,6 +426,45 @@ function App(props: AppProps): JSX.Element {
           };
         });
         break;
+      case 'seekToStart':
+        setState(s => {
+          if (s.playback === undefined || s.song === undefined)
+            return s;
+          allNotesOff(output);
+          const now = window.performance.now();
+          return {
+            ...s,
+            playback: {
+              ...s.playback,
+              startTime_ms: now,
+              pausedAt_ms: now,
+              playhead: { eventIndex: 0, nowTime_ms: now, fastNowTime_ms: now }
+            }
+          };
+        });
+        break;
+      case 'seekToEnd':
+        setState(s => {
+          if (s.playback === undefined || s.song === undefined)
+            return s;
+          allNotesOff(output);
+          const now = window.performance.now();
+          const songDuration = s.song.events[s.song.events.length - 1].time_ms;
+          return {
+            ...s,
+            playback: {
+              ...s.playback,
+              startTime_ms: now - songDuration,
+              pausedAt_ms: now,
+              playhead: {
+                eventIndex: s.song.events.length - 1,
+                nowTime_ms: now,
+                fastNowTime_ms: now
+              }
+            }
+          };
+        });
+        break;
       case 'addPendingEvent':
         setState(s => ({ ...s, pendingEvents: [...s.pendingEvents, action.event] }));
         break;
@@ -479,7 +520,23 @@ function App(props: AppProps): JSX.Element {
 
   return (
     <div className="app-container">
-      <div className="navbar">midi notebook</div>
+      <div className="navbar">
+        <span>midi notebook</span>
+        <div className="transport">
+          <button className="transport-btn" onClick={() => dispatch({ t: 'seekToStart' })} disabled={!state.playback}>
+            <img src="/icons/skip-back.svg" width={18} height={18} />
+          </button>
+          <button className="transport-btn" onClick={() => {
+            if (!state.playback) return;
+            dispatch({ t: state.playback.pausedAt_ms !== undefined ? 'resume' : 'pause' });
+          }} disabled={!state.playback}>
+            <img src={state.playback?.pausedAt_ms !== undefined ? '/icons/play.svg' : '/icons/pause.svg'} width={18} height={18} />
+          </button>
+          <button className="transport-btn" onClick={() => dispatch({ t: 'seekToEnd' })} disabled={!state.playback}>
+            <img src="/icons/skip-forward.svg" width={18} height={18} />
+          </button>
+        </div>
+      </div>
 
       <div className="main-content">
         <div className="sidebar-icons">
