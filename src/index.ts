@@ -36,7 +36,8 @@ app.get('/logIndex.json', (req, res) => {
       const chunk = JSON.parse(line);
       let total_us = 0;
       for (const event of chunk.events) {
-        total_us += event.delta.midi_us;
+        const midi_us = event.delta.midi_us > 0x100000000 ? 0 : event.delta.midi_us;
+        total_us += midi_us;
       }
       return total_us / 1000;
     });

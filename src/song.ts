@@ -36,7 +36,8 @@ export type Index = { file: string, lines: number, durations_ms: number[] }[];
 export function timedSong(song: Song): TimedSong {
   let time_ms: number = 0;
   const events: TimedSongEvent[] = song.events.map(event => {
-    time_ms += event.delta.midi_us / 1000;
+    const midi_us = event.delta.midi_us > 0x100000000 ? 0 : event.delta.midi_us;
+    time_ms += midi_us / 1000;
 
     const rv = { message: event.message, time_ms: time_ms };
     return rv;

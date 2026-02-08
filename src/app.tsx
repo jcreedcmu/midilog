@@ -326,7 +326,8 @@ function App(props: AppProps): JSX.Element {
     allNotesOff(output);
 
     const lines = (await getText(`/log/${file}`)).split('\n');
-    const song = timedSong(JSON.parse(lines[ix]));
+    const raw = JSON.parse(lines[ix]);
+    const song = timedSong(raw);
     const nSong = noteSong(song);
 
     const startTime_ms = window.performance.now();
