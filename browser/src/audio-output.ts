@@ -16,7 +16,7 @@ export function createAudioOutput(
   soundfontUrl?: string
 ): AudioOutput {
   return {
-    mode: midiOutput ? 'midi' : 'software',
+    mode: 'software',
     midiOutput,
     synth: null,
     context: null,

@@ -47,6 +47,8 @@ export type AppState = {
   pendingEvents: SongEvent[],
 };
 
+export type SidebarPanel = 'files' | 'recording' | 'settings';
+
 export type Action =
   | { t: 'none' }
   | { t: 'playFile', file: string, ix: number }
@@ -76,59 +78,186 @@ export function init(props: InitProps): AppHandle {
   };
 }
 
+// Icons as simple SVG components
+function FolderIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? '#fff' : '#888'}>
+      <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+    </svg>
+  );
+}
+
+function RecordIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? '#fff' : '#888'}>
+      <circle cx="12" cy="12" r="8" fill={active ? '#f44' : '#844'}/>
+    </svg>
+  );
+}
+
+function PianoIcon({ active }: { active: boolean }) {
+  const color = active ? '#fff' : '#888';
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24">
+      {/* White keys */}
+      <rect x="2" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5"/>
+      <rect x="6" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5"/>
+      <rect x="10" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5"/>
+      <rect x="14" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5"/>
+      <rect x="18" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5"/>
+      {/* Black keys */}
+      <rect x="5" y="6" width="2.5" height="7" fill={active ? '#333' : '#555'}/>
+      <rect x="9" y="6" width="2.5" height="7" fill={active ? '#333' : '#555'}/>
+      <rect x="16.5" y="6" width="2.5" height="7" fill={active ? '#333' : '#555'}/>
+    </svg>
+  );
+}
+
 type CanvasHandlers = {
   onPointerDown: (e: PointerEvent) => void;
   onPointerMove: (e: PointerEvent) => void;
   onPointerUp: (e: PointerEvent) => void;
 };
 
-function renderIndex(index: Index, dispatch: Dispatch, cref: CanvasRef, currentSong: SongIx | undefined, playback: Playback | undefined, canvasHandlers: CanvasHandlers, pendingEvents: SongEvent[], onSave: () => void, onDiscard: () => void, outputMode: OutputMode, hasMidi: boolean): JSX.Element {
-  const rows: JSX.Element[] = index.map(row => {
-    const links: JSX.Element[] = [];
-    for (let i = 0; i < row.lines; i++) {
-      let backgroundColor = currentSong && currentSong.file == row.file && currentSong.ix == i ? 'yellow' : 'white';
-      const button = <button
-        style={{ cursor: 'pointer', backgroundColor, border: '1px solid #aaa', borderRadius: 4 }}
-        onClick={() => { dispatch({ t: 'playFile', file: row.file, ix: i }); }}>
-        {i}
-      </button>;
-      links.push(<td>{button}</td>);
-    }
-    return <tr><td>{row.file}</td> {links}</tr>;
-  });
-  return <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-    <div style={{ padding: 8, borderBottom: '1px solid #ccc', display: 'flex', alignItems: 'center' }}>
-      <button onClick={onSave}>save</button>
-      <button onClick={onDiscard} style={{ marginLeft: 8 }}>discard</button>
-      <span style={{ marginLeft: 8 }}>{pendingEvents.length} events</span>
-      <span style={{ marginLeft: 'auto' }}>
+// Sidebar icon button
+function SidebarButton({ icon, active, onClick }: { icon: React.ReactNode, active: boolean, onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        background: active ? '#444' : 'transparent',
+        border: 'none',
+        padding: 12,
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+      }}
+    >
+      {icon}
+    </button>
+  );
+}
+
+// Files panel
+function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: Dispatch, currentSong: SongIx | undefined }) {
+  return (
+    <div style={{ padding: 12, overflowY: 'auto', height: '100%' }}>
+      <h3 style={{ margin: '0 0 12px 0', fontSize: 14, color: '#666' }}>Recordings</h3>
+      {index.map(row => (
+        <div key={row.file} style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>{row.file}</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {Array.from({ length: row.lines }, (_, i) => {
+              const isActive = currentSong && currentSong.file === row.file && currentSong.ix === i;
+              return (
+                <button
+                  key={i}
+                  style={{
+                    cursor: 'pointer',
+                    backgroundColor: isActive ? '#4a9eff' : '#e0e0e0',
+                    color: isActive ? '#fff' : '#333',
+                    border: 'none',
+                    borderRadius: 4,
+                    padding: '4px 8px',
+                    fontSize: 12,
+                  }}
+                  onClick={() => dispatch({ t: 'playFile', file: row.file, ix: i })}
+                >
+                  {i}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Recording panel
+function RecordingPanel({ pendingEvents, onSave, onDiscard }: { pendingEvents: SongEvent[], onSave: () => void, onDiscard: () => void }) {
+  return (
+    <div style={{ padding: 12 }}>
+      <h3 style={{ margin: '0 0 12px 0', fontSize: 14, color: '#666' }}>Recording</h3>
+      <div style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 16 }}>
+        {pendingEvents.length} <span style={{ fontSize: 14, fontWeight: 'normal', color: '#888' }}>events</span>
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          onClick={onSave}
+          disabled={pendingEvents.length === 0}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: pendingEvents.length > 0 ? '#4caf50' : '#ccc',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 4,
+            cursor: pendingEvents.length > 0 ? 'pointer' : 'default',
+          }}
+        >
+          Save
+        </button>
+        <button
+          onClick={onDiscard}
+          disabled={pendingEvents.length === 0}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: pendingEvents.length > 0 ? '#f44336' : '#ccc',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 4,
+            cursor: pendingEvents.length > 0 ? 'pointer' : 'default',
+          }}
+        >
+          Discard
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Settings panel
+function SettingsPanel({ outputMode, hasMidi, dispatch }: { outputMode: OutputMode, hasMidi: boolean, dispatch: Dispatch }) {
+  return (
+    <div style={{ padding: 12 }}>
+      <h3 style={{ margin: '0 0 12px 0', fontSize: 14, color: '#666' }}>MIDI Settings</h3>
+      <div style={{ marginBottom: 8, fontSize: 12, color: '#888' }}>Output Device</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <button
+          onClick={() => dispatch({ t: 'setOutputMode', mode: 'software' })}
+          style={{
+            padding: '8px 12px',
+            backgroundColor: outputMode === 'software' ? '#4a9eff' : '#e0e0e0',
+            color: outputMode === 'software' ? '#fff' : '#333',
+            border: 'none',
+            borderRadius: 4,
+            cursor: 'pointer',
+            textAlign: 'left',
+          }}
+        >
+          Software Synth
+        </button>
         <button
           onClick={() => dispatch({ t: 'setOutputMode', mode: 'midi' })}
           disabled={!hasMidi}
-          style={{ fontWeight: outputMode === 'midi' ? 'bold' : 'normal' }}>
-          MIDI
+          style={{
+            padding: '8px 12px',
+            backgroundColor: outputMode === 'midi' ? '#4a9eff' : '#e0e0e0',
+            color: outputMode === 'midi' ? '#fff' : '#333',
+            border: 'none',
+            borderRadius: 4,
+            cursor: hasMidi ? 'pointer' : 'default',
+            textAlign: 'left',
+            opacity: hasMidi ? 1 : 0.5,
+          }}
+        >
+          MIDI Device {!hasMidi && '(not connected)'}
         </button>
-        <button
-          onClick={() => dispatch({ t: 'setOutputMode', mode: 'software' })}
-          style={{ marginLeft: 4, fontWeight: outputMode === 'software' ? 'bold' : 'normal' }}>
-          Software
-        </button>
-      </span>
+      </div>
     </div>
-    <div style={{ flex: 1, overflowY: 'auto', borderBottom: '1px solid #ccc' }}>
-      <table>{rows}</table>
-    </div>
-    <div style={{ flexShrink: 0 }}>
-      <canvas
-        ref={cref}
-        style={{ width: '100%', height: '300px', border: '1px solid black', touchAction: 'none', cursor: 'pointer' }}
-        onPointerDown={canvasHandlers.onPointerDown}
-        onPointerMove={canvasHandlers.onPointerMove}
-        onPointerUp={canvasHandlers.onPointerUp}
-        onPointerLeave={canvasHandlers.onPointerUp}
-      />
-    </div>
-  </div>;
+  );
 }
 
 function playNextNote(song: TimedSong, playhead: Playhead): Action {
@@ -164,7 +293,7 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
 
   let xshift = 0;
 
-  // if (playHeadPosition_px > cw / 2) { 
+  // if (playHeadPosition_px > cw / 2) {
   xshift = cw / 2 - playHeadPosition_px;
   //}
   d.fillStyle = "#ddd";
@@ -210,6 +339,7 @@ function App(props: AppProps): JSX.Element {
     songIx: undefined,
     pendingEvents: []
   });
+  const [activePanel, setActivePanel] = useState<SidebarPanel>('files');
   const [cref, mc] = useCanvas(
     state, _renderMainCanvas,
     [state.playback?.playhead.fastNowTime_ms, state.playback, state.song],
@@ -371,7 +501,84 @@ function App(props: AppProps): JSX.Element {
     }
   };
 
-  return renderIndex(index, dispatch, cref, state.songIx, state.playback, canvasHandlers, state.pendingEvents, handleSave, handleDiscard, output.mode, output.midiOutput !== null);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      {/* Navbar */}
+      <div style={{
+        backgroundColor: '#222',
+        color: '#fff',
+        padding: '12px 16px',
+        fontSize: 18,
+        fontWeight: 'bold',
+        flexShrink: 0,
+      }}>
+        MIDI notebook
+      </div>
+
+      {/* Main content area */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Sidebar icons */}
+        <div style={{
+          backgroundColor: '#333',
+          display: 'flex',
+          flexDirection: 'column',
+          flexShrink: 0,
+        }}>
+          <SidebarButton
+            icon={<FolderIcon active={activePanel === 'files'} />}
+            active={activePanel === 'files'}
+            onClick={() => setActivePanel('files')}
+          />
+          <SidebarButton
+            icon={<RecordIcon active={activePanel === 'recording'} />}
+            active={activePanel === 'recording'}
+            onClick={() => setActivePanel('recording')}
+          />
+          <SidebarButton
+            icon={<PianoIcon active={activePanel === 'settings'} />}
+            active={activePanel === 'settings'}
+            onClick={() => setActivePanel('settings')}
+          />
+        </div>
+
+        {/* Sidebar panel */}
+        <div style={{
+          width: 250,
+          backgroundColor: '#f5f5f5',
+          borderRight: '1px solid #ddd',
+          flexShrink: 0,
+          overflowY: 'auto',
+        }}>
+          {activePanel === 'files' && (
+            <FilesPanel index={index} dispatch={dispatch} currentSong={state.songIx} />
+          )}
+          {activePanel === 'recording' && (
+            <RecordingPanel pendingEvents={state.pendingEvents} onSave={handleSave} onDiscard={handleDiscard} />
+          )}
+          {activePanel === 'settings' && (
+            <SettingsPanel outputMode={output.mode} hasMidi={output.midiOutput !== null} dispatch={dispatch} />
+          )}
+        </div>
+
+        {/* Piano roll canvas */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <canvas
+            ref={cref}
+            style={{
+              width: '100%',
+              height: '100%',
+              touchAction: 'none',
+              cursor: 'pointer',
+            }}
+            onPointerDown={canvasHandlers.onPointerDown}
+            onPointerMove={canvasHandlers.onPointerMove}
+            onPointerUp={canvasHandlers.onPointerUp}
+            onPointerLeave={canvasHandlers.onPointerUp}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function scheduleNextCallback(s: AppState, dispatch: Dispatch): AppState {
