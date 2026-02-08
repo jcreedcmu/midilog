@@ -5,6 +5,10 @@ import { CanvasInfo, CanvasRef, useCanvas } from './use-canvas';
 import { getText, unreachable } from './util';
 import { AudioOutput, OutputMode, send, allNotesOff, setMode } from './audio-output';
 
+// Pre-load pedal mark image for canvas rendering
+const pedalMarkImg = new Image();
+pedalMarkImg.src = '/icons/pedal-mark.svg';
+
 export type PlayCallback = (file: string, ix: number) => void;
 
 // Try to ship off each note playback this
@@ -297,6 +301,34 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
         d.fillText(pitchName[event.pitch % 12],
           textXshift + -1 + xshift + event.time_ms * pixel_of_ms,
           vert_offset - pixel_of_pitch * event.pitch + pixel_of_pitch * note_pitch_thickness / 2);
+      }
+    });
+
+    // Draw pedal markings
+    const pedalY = 100;
+    const pedalMarkH = 16;
+    state.nSong.events.forEach(event => {
+      if (event.t == 'pedal') {
+        const x = xshift + event.time_ms * pixel_of_ms;
+        const w = event.dur_ms * pixel_of_ms;
+
+        // Ped marking
+        if (pedalMarkImg.complete) {
+          const scale = pedalMarkH / pedalMarkImg.naturalHeight;
+          const pedalMarkW = pedalMarkImg.naturalWidth * scale;
+          d.drawImage(pedalMarkImg, x, pedalY - pedalMarkH - 4, pedalMarkW, pedalMarkH);
+        }
+
+        // Dotted line for duration
+        d.save();
+        d.strokeStyle = '#668';
+        d.lineWidth = 1;
+        d.setLineDash([3, 3]);
+        d.beginPath();
+        d.moveTo(x, pedalY);
+        d.lineTo(x + w, pedalY);
+        d.stroke();
+        d.restore();
       }
     });
   }
