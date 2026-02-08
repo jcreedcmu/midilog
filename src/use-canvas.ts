@@ -46,9 +46,11 @@ export function useCanvas<S>(
   useEffect(() => {
     const ci = infoRef.current;
     if (ci && size.x > 0 && size.y > 0) {
-      ci.c.width = size.x;
-      ci.c.height = size.y;
+      const dpr = window.devicePixelRatio || 1;
+      ci.c.width = size.x * dpr;
+      ci.c.height = size.y * dpr;
       ci.size = size;
+      ci.d.setTransform(dpr, 0, 0, dpr, 0, 0);
       render(ci, state);
     }
   }, [size, ...deps]);
@@ -56,11 +58,14 @@ export function useCanvas<S>(
   const ref: React.RefCallback<HTMLCanvasElement> = canvas => {
     if (canvas !== null && canvasRef.current !== canvas) {
       canvasRef.current = canvas;
+      const dpr = window.devicePixelRatio || 1;
       const width = Math.floor(canvas.getBoundingClientRect().width);
       const height = Math.floor(canvas.getBoundingClientRect().height);
-      canvas.width = width;
-      canvas.height = height;
-      infoRef.current = { c: canvas, d: canvas.getContext('2d')!, size: { x: width, y: height } };
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      const ctx = canvas.getContext('2d')!;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      infoRef.current = { c: canvas, d: ctx, size: { x: width, y: height } };
       setSize({ x: width, y: height });
       onLoad(infoRef.current);
     }
