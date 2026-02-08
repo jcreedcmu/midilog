@@ -24,6 +24,7 @@ app.get('/js/spessasynth_processor.min.js', (req, res) => {
   });
 });
 app.use('/soundfont', express.static(path.resolve(__dirname, '../../soundfont')));
+app.use('/icons', express.static(path.resolve(__dirname, '../public/icons')));
 app.get('/logIndex.json', (req, res) => {
 
   const metadata: { file: string, lines: number }[] = [];

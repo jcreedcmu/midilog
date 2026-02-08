@@ -78,38 +78,18 @@ export function init(props: InitProps): AppHandle {
   };
 }
 
-// Icons as simple SVG components
-function FolderIcon({ active }: { active: boolean }) {
+// Icon component that loads from SVG files
+function Icon({ src, active }: { src: string, active: boolean }) {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? '#fff' : '#888'}>
-      <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
-    </svg>
-  );
-}
-
-function RecordIcon({ active }: { active: boolean }) {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? '#fff' : '#888'}>
-      <circle cx="12" cy="12" r="8" fill={active ? '#f44' : '#844'} />
-    </svg>
-  );
-}
-
-function PianoIcon({ active }: { active: boolean }) {
-  const color = active ? '#fff' : '#888';
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24">
-      {/* White keys */}
-      <rect x="2" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5" />
-      <rect x="6" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5" />
-      <rect x="10" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5" />
-      <rect x="14" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5" />
-      <rect x="18" y="6" width="4" height="12" fill={color} stroke={active ? '#666' : '#555'} strokeWidth="0.5" />
-      {/* Black keys */}
-      <rect x="5" y="6" width="2.5" height="7" fill={active ? '#333' : '#555'} />
-      <rect x="9" y="6" width="2.5" height="7" fill={active ? '#333' : '#555'} />
-      <rect x="16.5" y="6" width="2.5" height="7" fill={active ? '#333' : '#555'} />
-    </svg>
+    <img
+      src={src}
+      width={24}
+      height={24}
+      style={{
+        filter: active ? 'brightness(1.5)' : 'brightness(0.7)',
+        opacity: active ? 1 : 0.7,
+      }}
+    />
   );
 }
 
@@ -525,17 +505,17 @@ function App(props: AppProps): JSX.Element {
           flexShrink: 0,
         }}>
           <SidebarButton
-            icon={<FolderIcon active={activePanel === 'files'} />}
+            icon={<Icon src="/icons/folder.svg" active={activePanel === 'files'} />}
             active={activePanel === 'files'}
             onClick={() => setActivePanel('files')}
           />
           <SidebarButton
-            icon={<RecordIcon active={activePanel === 'recording'} />}
+            icon={<Icon src="/icons/record.svg" active={activePanel === 'recording'} />}
             active={activePanel === 'recording'}
             onClick={() => setActivePanel('recording')}
           />
           <SidebarButton
-            icon={<PianoIcon active={activePanel === 'settings'} />}
+            icon={<Icon src="/icons/piano.svg" active={activePanel === 'settings'} />}
             active={activePanel === 'settings'}
             onClick={() => setActivePanel('settings')}
           />

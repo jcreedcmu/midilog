@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="24"
+   height="24"
+   viewBox="0 0 24 24"
+   version="1.1"
+   id="svg1148"
+   sodipodi:docname="piano.svg"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1152" />
+  <sodipodi:namedview
+     id="namedview1150"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     showgrid="false"
+     inkscape:zoom="29.958333"
+     inkscape:cx="12"
+     inkscape:cy="11.98331"
+     inkscape:window-width="1910"
+     inkscape:window-height="2117"
+     inkscape:window-x="1920"
+     inkscape:window-y="18"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1148" />
+  <!-- White keys -->
+  <rect
+     x="1.8519002"
+     y="4.0977988"
+     width="5.1016307"
+     height="15.304893"
+     fill="#cccccc"
+     stroke="#999999"
+     stroke-width="0.637704"
+     id="rect1132"
+     style="fill:#ffffff" />
+  <rect
+     x="6.9535308"
+     y="4.0977988"
+     width="5.1016307"
+     height="15.304893"
+     fill="#cccccc"
+     stroke="#999999"
+     stroke-width="0.637704"
+     id="rect1134"
+     style="fill:#ffffff" />
+  <rect
+     x="12.055162"
+     y="4.0977988"
+     width="5.1016307"
+     height="15.304893"
+     fill="#cccccc"
+     stroke="#999999"
+     stroke-width="0.637704"
+     id="rect1136"
+     style="fill:#ffffff" />
+  <rect
+     x="17.156792"
+     y="4.0977988"
+     width="5.1016307"
+     height="15.304893"
+     fill="#cccccc"
+     stroke="#999999"
+     stroke-width="0.637704"
+     id="rect1138"
+     style="fill:#ffffff" />
+  <!-- Black keys -->
+  <rect
+     x="5.6781235"
+     y="4.0977988"
+     width="3.1885192"
+     height="8.9278536"
+     fill="#333333"
+     id="rect1142"
+     style="stroke-width:1.27541" />
+  <rect
+     x="10.497076"
+     y="4.0977988"
+     width="3.1885192"
+     height="8.9278536"
+     fill="#333333"
+     id="rect1144"
+     style="stroke-width:1.27541" />
+  <rect
+     x="15.251126"
+     y="4.0977988"
+     width="3.1885192"
+     height="8.9278536"
+     fill="#333333"
+     id="rect1144-3"
+     style="stroke-width:1.27541" />
+</svg>
