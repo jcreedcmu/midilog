@@ -30,6 +30,13 @@ html, body {
   justify-content: space-between;
 }
 
+.navbar-info {
+  font-size: 14px;
+  font-weight: normal;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0;
+}
+
 .transport {
   display: flex;
   gap: 4px;

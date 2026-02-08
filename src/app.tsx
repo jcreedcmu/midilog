@@ -140,22 +140,22 @@ function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: 
           <thead>
             <tr><th>date</th><th>#</th><th>dur</th></tr>
           </thead>
-        <tbody>
-          {rows.map(({ file, ix, duration_ms }) => {
-            const isActive = currentSong && currentSong.file === file && currentSong.ix === ix;
-            return (
-              <tr
-                key={`${file}-${ix}`}
-                className={cx('files-row', isActive && 'active')}
-                onClick={() => dispatch({ t: 'playFile', file, ix })}
-              >
-                <td>{file.replace(/\.json$/, '')}</td>
-                <td>{ix}</td>
-                <td>{formatDuration(duration_ms)}</td>
-              </tr>
-            );
-          })}
-        </tbody>
+          <tbody>
+            {rows.map(({ file, ix, duration_ms }) => {
+              const isActive = currentSong && currentSong.file === file && currentSong.ix === ix;
+              return (
+                <tr
+                  key={`${file}-${ix}`}
+                  className={cx('files-row', isActive && 'active')}
+                  onClick={() => dispatch({ t: 'playFile', file, ix })}
+                >
+                  <td>{file.replace(/\.json$/, '')}</td>
+                  <td>{ix}</td>
+                  <td>{formatDuration(duration_ms)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
         </table>
       </div>
     </div>
@@ -559,7 +559,9 @@ function App(props: AppProps): JSX.Element {
     <div className="app-container">
       <div className="navbar">
         <span>midi notebook</span>
+        {state.songIx && (state.songIx.file.replace(/\.json$/, '') + '/' + state.songIx.ix)}
         <div className="transport">
+          {state.playback && formatDuration(state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms)}
           <button className="transport-btn" onClick={() => dispatch({ t: 'seekToStart' })} disabled={!state.playback}>
             <img src="/icons/skip-back.svg" width={18} height={18} />
           </button>
