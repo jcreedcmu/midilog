@@ -86,8 +86,7 @@ function Icon({ src, active }: { src: string, active: boolean }) {
       width={24}
       height={24}
       style={{
-        filter: active ? 'brightness(1.5)' : 'brightness(0.7)',
-        opacity: active ? 1 : 0.7,
+        opacity: active ? 1 : 0.5,
       }}
     />
   );
@@ -116,7 +115,7 @@ function SidebarButton({ icon, active, onClick }: { icon: React.ReactNode, activ
 function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: Dispatch, currentSong: SongIx | undefined }) {
   return (
     <div className="files-panel">
-      <h3 className="panel-header">Recordings</h3>
+      <h3 className="panel-header">Entries</h3>
       {index.map(row => (
         <div key={row.file} className="file-group">
           <div className="file-name">{row.file}</div>
