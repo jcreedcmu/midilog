@@ -229,20 +229,40 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
   d.textAlign = 'right';
   const currentTime_ms = playback ? playback.playhead.fastNowTime_ms - playback.startTime_ms : 0;
   if (state.nSong !== undefined) {
+    // Draw shadows for active notes first (behind everything)
     state.nSong.events.forEach(event => {
       if (event.t == 'note') {
         const isActive = currentTime_ms >= event.time_ms && currentTime_ms <= event.time_ms + event.dur_ms;
-        d.fillStyle = isActive ? 'white' : pitchColor[event.pitch % 12];
+        if (isActive) {
+          d.save();
+          d.shadowColor = 'black';
+          d.shadowOffsetX = 2;
+          d.shadowOffsetY = 2;
+          d.shadowBlur = 8;
+          d.fillStyle = pitchColor[event.pitch % 12];
+          d.fillRect(
+            xshift + event.time_ms * pixel_of_ms,
+            vert_offset - pixel_of_pitch * event.pitch,
+            event.dur_ms * pixel_of_ms,
+            pixel_of_pitch * 2);
+          d.restore();
+        }
+      }
+    });
+    // Draw all note rectangles
+    state.nSong.events.forEach(event => {
+      if (event.t == 'note') {
+        d.fillStyle = pitchColor[event.pitch % 12];
         d.fillRect(xshift + event.time_ms * pixel_of_ms, vert_offset - pixel_of_pitch * event.pitch, event.dur_ms * pixel_of_ms, pixel_of_pitch * 2);
       }
     });
+    // Draw note labels
     state.nSong.events.forEach(event => {
       if (event.t == 'note') {
         d.fillStyle = 'black';
         d.fillText(pitchName[event.pitch % 12], xshift + event.time_ms * pixel_of_ms, 1 + vert_offset - pixel_of_pitch * (event.pitch - 1));
 
-        const isActive = currentTime_ms >= event.time_ms && currentTime_ms <= event.time_ms + event.dur_ms;
-        d.fillStyle = isActive ? 'white' : pitchColor[event.pitch % 12];
+        d.fillStyle = pitchColor[event.pitch % 12];
         d.fillText(pitchName[event.pitch % 12], -1 + xshift + event.time_ms * pixel_of_ms, vert_offset - pixel_of_pitch * (event.pitch - 1));
       }
     });
