@@ -25,26 +25,17 @@ app.get('/js/spessasynth_processor.min.js', (req, res) => {
 });
 app.use('/soundfont', express.static(path.resolve(__dirname, '../soundfont')));
 app.use('/icons', express.static(path.resolve(__dirname, '../public/icons')));
-app.get('/logIndex.json', (req, res) => {
-
-  const metadata: { file: string, lines: number, durations_ms: number[] }[] = [];
+app.get('/api/songs', (req, res) => {
+  const songs: { file: string, ix: number, song: any }[] = [];
   const logDir = path.resolve(__dirname, '../log');
   const files = fs.readdirSync(logDir);
   files.forEach(file => {
     const chunks = fs.readFileSync(path.join(logDir, file), 'utf8').split('\n').filter(x => x.length > 0);
-    const durations_ms = chunks.map(line => {
-      const chunk = JSON.parse(line);
-      let total_us = 0;
-      for (const event of chunk.events) {
-        const midi_us = event.delta.midi_us > 0x100000000 ? 0 : event.delta.midi_us;
-        total_us += midi_us;
-      }
-      return total_us / 1000;
+    chunks.forEach((line, ix) => {
+      songs.push({ file, ix, song: JSON.parse(line) });
     });
-    metadata.push({ file, lines: chunks.length, durations_ms });
   });
-  res.json(metadata);
-
+  res.json(songs);
 });
 app.use(express.static(path.resolve(__dirname, '../public')));
 

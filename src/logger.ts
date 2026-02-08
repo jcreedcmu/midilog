@@ -1,6 +1,6 @@
 import { init } from './app';
 import { createAudioOutput } from './audio-output';
-import { Index, Song, SongEvent } from './song';
+import { SongLibrary, Song, SongEvent, chunkDuration_ms } from './song';
 import { getText } from './util';
 
 
@@ -39,8 +39,12 @@ async function go() {
     const output = createAudioOutput(midiOutput, '/soundfont/gm-good.sf3');
 
     console.log(`success, midi output: ${midiOutput ? 'found' : 'not found'}`);
-    const ijson = await getText('/logIndex.json');
-    const index: Index = JSON.parse(ijson);
+    const songsJson = await getText('/api/songs');
+    const rawSongs: { file: string, ix: number, song: Song }[] = JSON.parse(songsJson);
+    const library: SongLibrary = rawSongs.map(entry => ({
+      ...entry,
+      duration_ms: chunkDuration_ms(entry.song.events),
+    }));
 
     const onSave = async (events: SongEvent[]) => {
       const payload: Song = {
@@ -58,7 +62,7 @@ async function go() {
       timing.isFirstEvent = true;
     };
 
-    const app = init({ index, output, onSave });
+    const app = init({ library, output, onSave });
 
     input.addEventListener('midimessage', e => {
       console.log(e.data);

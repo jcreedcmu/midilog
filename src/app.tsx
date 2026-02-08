@@ -1,8 +1,8 @@
 import { createRoot } from 'react-dom/client';
 import { useRef, useState } from 'react';
-import { pitchColor, Index, NoteSong, TimedSong, noteSong, timedSong, pitchName, SongEvent } from './song';
+import { pitchColor, SongLibrary, NoteSong, TimedSong, noteSong, timedSong, pitchName, SongEvent } from './song';
 import { CanvasInfo, CanvasRef, useCanvas } from './use-canvas';
-import { getText, unreachable } from './util';
+import { unreachable } from './util';
 import { AudioOutput, OutputMode, send, allNotesOff, setMode } from './audio-output';
 
 // Pre-load pedal mark image for canvas rendering
@@ -17,7 +17,7 @@ export type PlayCallback = (file: string, ix: number) => void;
 const PLAYBACK_ANTICIPATION_MS = 50;
 
 export type InitProps = {
-  index: Index,
+  library: SongLibrary,
   output: AudioOutput,
   onSave: (events: SongEvent[]) => Promise<void>,
 };
@@ -125,13 +125,7 @@ function formatDuration(ms: number): string {
 }
 
 // Files panel
-function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: Dispatch, currentSong: SongIx | undefined }) {
-  const rows: { file: string, ix: number, duration_ms: number }[] = [];
-  for (const row of index) {
-    for (let i = 0; i < row.lines; i++) {
-      rows.push({ file: row.file, ix: i, duration_ms: row.durations_ms[i] });
-    }
-  }
+function FilesPanel({ library, dispatch, currentSong }: { library: SongLibrary, dispatch: Dispatch, currentSong: SongIx | undefined }) {
   return (
     <div className="files-panel">
       <h3 className="panel-header">Entries</h3>
@@ -141,7 +135,7 @@ function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: 
             <tr><th>date</th><th>#</th><th>dur</th></tr>
           </thead>
           <tbody>
-            {rows.map(({ file, ix, duration_ms }) => {
+            {library.map(({ file, ix, duration_ms }) => {
               const isActive = currentSong && currentSong.file === file && currentSong.ix === ix;
               return (
                 <tr
@@ -342,7 +336,7 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
 }
 
 function App(props: AppProps): JSX.Element {
-  const { index, output, onSave, dispatchRef } = props;
+  const { library, output, onSave, dispatchRef } = props;
   const [state, setState] = useState<AppState>({
     playback: undefined,
     song: undefined,
@@ -360,19 +354,18 @@ function App(props: AppProps): JSX.Element {
     () => { }
   );
 
-  const playCallback: PlayCallback = async (file, ix) => {
-    // Silence any currently playing notes before loading new song
+  const playCallback: PlayCallback = (file, ix) => {
     allNotesOff(output);
 
-    const lines = (await getText(`/log/${file}`)).split('\n');
-    const raw = JSON.parse(lines[ix]);
-    const song = timedSong(raw);
+    const entry = library.find(e => e.file === file && e.ix === ix);
+    if (!entry) return;
+
+    const song = timedSong(entry.song);
     const nSong = noteSong(song);
 
     const startTime_ms = window.performance.now();
     const playhead: Playhead = { eventIndex: 0, nowTime_ms: startTime_ms, fastNowTime_ms: startTime_ms };
 
-    // Load in paused state - user must click Play to start
     setState(s => {
       return { ...s, song: song, nSong: nSong, songIx: { file, ix }, playback: { timeoutId: 0, playhead, startTime_ms, pausedAt_ms: startTime_ms } };
     });
@@ -613,7 +606,7 @@ function App(props: AppProps): JSX.Element {
           {activePanel !== null && (
             <div className="sidebar-panel">
               {activePanel === 'files' && (
-                <FilesPanel index={index} dispatch={dispatch} currentSong={state.songIx} />
+                <FilesPanel library={library} dispatch={dispatch} currentSong={state.songIx} />
               )}
               {activePanel === 'recording' && (
                 <RecordingPanel pendingEvents={state.pendingEvents} onSave={handleSave} onDiscard={handleDiscard} />
