@@ -220,7 +220,7 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
   // if (playHeadPosition_px > cw / 2) {
   xshift = cw / 2 - playHeadPosition_px;
   //}
-  d.fillStyle = "#ddd";
+  d.fillStyle = "#f0f0f7";
   d.fillRect(0, 0, cw, ch);
   const fontHeight = 12;
 
