@@ -110,9 +110,12 @@ export async function send(output: AudioOutput, message: number[], timestamp?: n
 
 export function allNotesOff(output: AudioOutput): void {
   if (output.mode === 'midi' && output.midiOutput) {
-    output.midiOutput.send([176, 64, 0]);
-    output.midiOutput.send([176, 121, 0]);
-    output.midiOutput.send([176, 123, 0]);
+    // Clear any scheduled MIDI messages first
+    output.midiOutput.clear();
+    // Then send immediate note-off commands
+    output.midiOutput.send([176, 64, 0]);   // Sustain pedal off
+    output.midiOutput.send([176, 121, 0]);  // Reset all controllers
+    output.midiOutput.send([176, 123, 0]);  // All notes off
   } else if (output.synth) {
     output.synth.stopAll(true);
   }
