@@ -31,25 +31,13 @@ export type TimedSongEvent = {
   time_ms: number,
 }
 
-export type SongEntry = { file: string, ix: number, song: Song, duration_ms: number };
-export type SongLibrary = SongEntry[];
-
-export function sanitizeMidiUs(midi_us: number): number {
-  return midi_us > 0x100000000 ? 0 : midi_us;
-}
-
-export function chunkDuration_ms(events: SongEvent[]): number {
-  let total_us = 0;
-  for (const event of events) {
-    total_us += sanitizeMidiUs(event.delta.midi_us);
-  }
-  return total_us / 1000;
-}
+export type Index = { file: string, lines: number, durations_ms: number[] }[];
 
 export function timedSong(song: Song): TimedSong {
   let time_ms: number = 0;
   const events: TimedSongEvent[] = song.events.map(event => {
-    time_ms += sanitizeMidiUs(event.delta.midi_us) / 1000;
+    const midi_us = event.delta.midi_us > 0x100000000 ? 0 : event.delta.midi_us;
+    time_ms += midi_us / 1000;
 
     const rv = { message: event.message, time_ms: time_ms };
     return rv;
