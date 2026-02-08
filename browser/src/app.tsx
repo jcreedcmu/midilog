@@ -93,6 +93,10 @@ function Icon({ src, active }: { src: string, active: boolean }) {
   );
 }
 
+function cx(...classes: (string | false | undefined)[]): string {
+  return classes.filter(Boolean).join(' ');
+}
+
 type CanvasHandlers = {
   onPointerDown: (e: PointerEvent) => void;
   onPointerMove: (e: PointerEvent) => void;
@@ -102,19 +106,7 @@ type CanvasHandlers = {
 // Sidebar icon button
 function SidebarButton({ icon, active, onClick }: { icon: React.ReactNode, active: boolean, onClick: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        background: active ? '#444' : 'transparent',
-        border: 'none',
-        padding: 12,
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-      }}
-    >
+    <button onClick={onClick} className={cx('sidebar-button', active && 'active')}>
       {icon}
     </button>
   );
@@ -123,26 +115,18 @@ function SidebarButton({ icon, active, onClick }: { icon: React.ReactNode, activ
 // Files panel
 function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: Dispatch, currentSong: SongIx | undefined }) {
   return (
-    <div style={{ padding: 12, overflowY: 'auto', height: '100%' }}>
-      <h3 style={{ margin: '0 0 12px 0', fontSize: 14, color: '#666' }}>Recordings</h3>
+    <div className="files-panel">
+      <h3 className="panel-header">Recordings</h3>
       {index.map(row => (
-        <div key={row.file} style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>{row.file}</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+        <div key={row.file} className="file-group">
+          <div className="file-name">{row.file}</div>
+          <div className="file-buttons">
             {Array.from({ length: row.lines }, (_, i) => {
               const isActive = currentSong && currentSong.file === row.file && currentSong.ix === i;
               return (
                 <button
                   key={i}
-                  style={{
-                    cursor: 'pointer',
-                    backgroundColor: isActive ? '#4a9eff' : '#e0e0e0',
-                    color: isActive ? '#fff' : '#333',
-                    border: 'none',
-                    borderRadius: 4,
-                    padding: '4px 8px',
-                    fontSize: 12,
-                  }}
+                  className={cx('file-button', isActive && 'active')}
                   onClick={() => dispatch({ t: 'playFile', file: row.file, ix: i })}
                 >
                   {i}
@@ -159,38 +143,16 @@ function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: 
 // Recording panel
 function RecordingPanel({ pendingEvents, onSave, onDiscard }: { pendingEvents: SongEvent[], onSave: () => void, onDiscard: () => void }) {
   return (
-    <div style={{ padding: 12 }}>
-      <h3 style={{ margin: '0 0 12px 0', fontSize: 14, color: '#666' }}>Recording</h3>
-      <div style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 16 }}>
-        {pendingEvents.length} <span style={{ fontSize: 14, fontWeight: 'normal', color: '#888' }}>events</span>
+    <div className="panel-content">
+      <h3 className="panel-header">Recording</h3>
+      <div className="event-count">
+        {pendingEvents.length} <span className="event-count-label">events</span>
       </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button
-          onClick={onSave}
-          disabled={pendingEvents.length === 0}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: pendingEvents.length > 0 ? '#4caf50' : '#ccc',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 4,
-            cursor: pendingEvents.length > 0 ? 'pointer' : 'default',
-          }}
-        >
+      <div className="button-row">
+        <button onClick={onSave} disabled={pendingEvents.length === 0} className="btn btn-save">
           Save
         </button>
-        <button
-          onClick={onDiscard}
-          disabled={pendingEvents.length === 0}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: pendingEvents.length > 0 ? '#f44336' : '#ccc',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 4,
-            cursor: pendingEvents.length > 0 ? 'pointer' : 'default',
-          }}
-        >
+        <button onClick={onDiscard} disabled={pendingEvents.length === 0} className="btn btn-discard">
           Discard
         </button>
       </div>
@@ -201,37 +163,20 @@ function RecordingPanel({ pendingEvents, onSave, onDiscard }: { pendingEvents: S
 // Settings panel
 function SettingsPanel({ outputMode, hasMidi, dispatch }: { outputMode: OutputMode, hasMidi: boolean, dispatch: Dispatch }) {
   return (
-    <div style={{ padding: 12 }}>
-      <h3 style={{ margin: '0 0 12px 0', fontSize: 14, color: '#666' }}>MIDI Settings</h3>
-      <div style={{ marginBottom: 8, fontSize: 12, color: '#888' }}>Output Device</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div className="panel-content">
+      <h3 className="panel-header">MIDI Settings</h3>
+      <div className="settings-label">Output Device</div>
+      <div className="settings-buttons">
         <button
           onClick={() => dispatch({ t: 'setOutputMode', mode: 'software' })}
-          style={{
-            padding: '8px 12px',
-            backgroundColor: outputMode === 'software' ? '#4a9eff' : '#e0e0e0',
-            color: outputMode === 'software' ? '#fff' : '#333',
-            border: 'none',
-            borderRadius: 4,
-            cursor: 'pointer',
-            textAlign: 'left',
-          }}
+          className={cx('settings-button', outputMode === 'software' && 'active')}
         >
           Software Synth
         </button>
         <button
           onClick={() => dispatch({ t: 'setOutputMode', mode: 'midi' })}
           disabled={!hasMidi}
-          style={{
-            padding: '8px 12px',
-            backgroundColor: outputMode === 'midi' ? '#4a9eff' : '#e0e0e0',
-            color: outputMode === 'midi' ? '#fff' : '#333',
-            border: 'none',
-            borderRadius: 4,
-            cursor: hasMidi ? 'pointer' : 'default',
-            textAlign: 'left',
-            opacity: hasMidi ? 1 : 0.5,
-          }}
+          className={cx('settings-button', outputMode === 'midi' && 'active')}
         >
           MIDI Device {!hasMidi && '(not connected)'}
         </button>
@@ -482,28 +427,11 @@ function App(props: AppProps): JSX.Element {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-      {/* Navbar */}
-      <div style={{
-        backgroundColor: '#222',
-        color: '#fff',
-        padding: '12px 16px',
-        fontSize: 18,
-        fontWeight: 'bold',
-        flexShrink: 0,
-      }}>
-        midi notebook
-      </div>
+    <div className="app-container">
+      <div className="navbar">midi notebook</div>
 
-      {/* Main content area */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Sidebar icons */}
-        <div style={{
-          backgroundColor: '#333',
-          display: 'flex',
-          flexDirection: 'column',
-          flexShrink: 0,
-        }}>
+      <div className="main-content">
+        <div className="sidebar-icons">
           <SidebarButton
             icon={<Icon src="/icons/folder.svg" active={activePanel === 'files'} />}
             active={activePanel === 'files'}
@@ -521,14 +449,7 @@ function App(props: AppProps): JSX.Element {
           />
         </div>
 
-        {/* Sidebar panel */}
-        <div style={{
-          width: 250,
-          backgroundColor: '#f5f5f5',
-          borderRight: '1px solid #ddd',
-          flexShrink: 0,
-          overflowY: 'auto',
-        }}>
+        <div className="sidebar-panel">
           {activePanel === 'files' && (
             <FilesPanel index={index} dispatch={dispatch} currentSong={state.songIx} />
           )}
@@ -540,16 +461,10 @@ function App(props: AppProps): JSX.Element {
           )}
         </div>
 
-        {/* Piano roll canvas */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div className="piano-roll-container">
           <canvas
             ref={cref}
-            style={{
-              width: '100%',
-              height: '100%',
-              touchAction: 'none',
-              cursor: 'pointer',
-            }}
+            className="piano-roll-canvas"
             onPointerDown={canvasHandlers.onPointerDown}
             onPointerMove={canvasHandlers.onPointerMove}
             onPointerUp={canvasHandlers.onPointerUp}

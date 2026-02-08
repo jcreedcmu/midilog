@@ -37,7 +37,7 @@ app.get('/logIndex.json', (req, res) => {
   res.json(metadata);
 
 });
-app.get('/', express.static(path.resolve(__dirname, '../public')));
+app.use(express.static(path.resolve(__dirname, '../public')));
 
 app.post('/api/save', (req, res) => {
   const basename = (new Date()).toJSON().replace(/T.*/, '');
