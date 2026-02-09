@@ -4,7 +4,7 @@ import * as path from 'path';
 import serveIndex from 'serve-index';
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 console.log(__dirname);
 app.use('/log', serveIndex(__dirname + '/../log'));
