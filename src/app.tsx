@@ -316,31 +316,36 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
       }
     });
 
-    // Draw pedal markings
-    const pedalY = 100;
-    const pedalMarkH = 16;
+    // Draw pedal lane
+    const pedalLaneH = 32;
+
+    // Lane background
+    d.fillStyle = '#e8e8f0';
+    d.fillRect(0, 0, cw, pedalLaneH);
+
+    // Lane divider
+    d.strokeStyle = '#bbc';
+    d.lineWidth = 1;
+    d.beginPath();
+    d.moveTo(0, pedalLaneH - 0.5);
+    d.lineTo(cw, pedalLaneH - 0.5);
+    d.stroke();
+
+    // Draw pedal bars in the lane
     state.nSong.events.forEach(event => {
       if (event.t == 'pedal') {
         const x = xshift + event.time_ms * pixel_of_ms;
         const w = event.dur_ms * pixel_of_ms;
 
-        // Ped marking
-        if (pedalMarkImg.complete) {
-          const scale = pedalMarkH / pedalMarkImg.naturalHeight;
-          const pedalMarkW = pedalMarkImg.naturalWidth * scale;
-          d.drawImage(pedalMarkImg, x, pedalY - pedalMarkH - 4, pedalMarkW, pedalMarkH);
-        }
+        d.fillStyle = '#c0c4d0';
+        d.fillRect(x, 0, w, pedalLaneH);
 
-        // Dotted line for duration
-        d.save();
-        d.strokeStyle = '#668';
-        d.lineWidth = 1;
-        d.setLineDash([3, 3]);
-        d.beginPath();
-        d.moveTo(x, pedalY);
-        d.lineTo(x + w, pedalY);
-        d.stroke();
-        d.restore();
+        if (pedalMarkImg.complete) {
+          const markH = 16;
+          const scale = markH / pedalMarkImg.naturalHeight;
+          const markW = pedalMarkImg.naturalWidth * scale;
+          d.drawImage(pedalMarkImg, x + 3, (pedalLaneH - markH) / 2, markW, markH);
+        }
       }
     });
   }
