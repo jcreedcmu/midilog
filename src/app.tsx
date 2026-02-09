@@ -339,15 +339,16 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
 
         d.fillStyle = '#c0c4d0';
         d.fillRect(x, 0, w, pedalLaneH);
-
-        if (pedalMarkImg.complete) {
-          const markH = 16;
-          const scale = markH / pedalMarkImg.naturalHeight;
-          const markW = pedalMarkImg.naturalWidth * scale;
-          d.drawImage(pedalMarkImg, x + 3, (pedalLaneH - markH) / 2, markW, markH);
-        }
       }
     });
+
+    // Draw Ped label once, fixed on the right
+    if (pedalMarkImg.complete) {
+      const markH = 16;
+      const scale = markH / pedalMarkImg.naturalHeight;
+      const markW = pedalMarkImg.naturalWidth * scale;
+      d.drawImage(pedalMarkImg, cw - markW - 6, (pedalLaneH - markH) / 2, markW, markH);
+    }
   }
 
   if (playback !== undefined) {
