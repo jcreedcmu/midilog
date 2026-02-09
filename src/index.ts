@@ -31,9 +31,8 @@ app.get('/logIndex.json', (req, res) => {
   const logDir = path.resolve(__dirname, '../log');
   const files = fs.readdirSync(logDir);
   files.forEach(file => {
-    const chunks = fs.readFileSync(path.join(logDir, file), 'utf8').split('\n').filter(x => x.length > 0);
-    const durations_ms = chunks.map(line => {
-      const chunk = JSON.parse(line);
+    const chunks = JSON.parse(fs.readFileSync(path.join(logDir, file), 'utf8'));
+    const durations_ms = chunks.map((chunk: any) => {
       let total_us = 0;
       for (const event of chunk.events) {
         const midi_us = event.delta.midi_us > 0x100000000 ? 0 : event.delta.midi_us;
@@ -51,11 +50,11 @@ app.use(express.static(path.resolve(__dirname, '../public')));
 app.post('/api/save', (req, res) => {
   const { song, file, ix } = req.body;
   const filePath = path.resolve(__dirname, `../log/${file}`);
-  const lines = fs.existsSync(filePath)
-    ? fs.readFileSync(filePath, 'utf8').split('\n').filter(x => x.length > 0)
+  const songs = fs.existsSync(filePath)
+    ? JSON.parse(fs.readFileSync(filePath, 'utf8'))
     : [];
-  lines[ix] = JSON.stringify(song);
-  fs.writeFileSync(filePath, lines.join('\n') + '\n', 'utf8');
+  songs[ix] = song;
+  fs.writeFileSync(filePath, JSON.stringify(songs) + '\n', 'utf8');
   res.json({ ok: true });
 });
 

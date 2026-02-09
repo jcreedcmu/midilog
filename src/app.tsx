@@ -151,19 +151,18 @@ function App(props: AppProps): JSX.Element {
     () => { }
   );
 
-  // Pre-fetch song text so we have it available; cache check happens inside setState
-  const fetchedSongsRef = useRef<Map<string, string>>(new Map());
+  // Pre-fetch parsed song arrays; cache check happens inside setState
+  const fetchedSongsRef = useRef<Map<string, Song[]>>(new Map());
 
   const playCallback = async (file: string, ix: number) => {
     // Silence any currently playing notes before loading new song
     allNotesOff(output);
 
-    // Always fetch the file text so it's available (may already be cached in entry.song)
-    const key = `${file}`;
-    if (!fetchedSongsRef.current.has(key)) {
-      fetchedSongsRef.current.set(key, await getText(`/log/${file}`));
+    // Always fetch the file so it's available (may already be cached in entry.song)
+    if (!fetchedSongsRef.current.has(file)) {
+      fetchedSongsRef.current.set(file, JSON.parse(await getText(`/log/${file}`)));
     }
-    const fileText = fetchedSongsRef.current.get(key)!;
+    const fileSongs = fetchedSongsRef.current.get(file)!;
 
     setState(s => {
       const entry = s.songs.find(e => e.file === file && e.ix === ix);
@@ -172,8 +171,7 @@ function App(props: AppProps): JSX.Element {
       if (entry?.song) {
         raw = entry.song;
       } else {
-        const lines = fileText.split('\n');
-        raw = JSON.parse(lines[ix]);
+        raw = fileSongs[ix];
         // Cache it (not dirty — just caching server data)
         newSongs = s.songs.map(e => e.file === file && e.ix === ix ? { ...e, song: raw } : e);
       }
