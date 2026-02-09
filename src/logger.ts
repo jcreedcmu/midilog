@@ -1,6 +1,6 @@
 import { init } from './app';
 import { createAudioOutput } from './audio-output';
-import { Index, Song, SongEvent } from './song';
+import { Index, SongEntry, SongEvent } from './song';
 import { getText } from './util';
 
 
@@ -39,26 +39,17 @@ async function go() {
     const output = createAudioOutput(midiOutput, '/soundfont/gm-good.sf3');
 
     console.log(`success, midi output: ${midiOutput ? 'found' : 'not found'}`);
-    const ijson = await getText('/logIndex.json');
-    const index: Index = JSON.parse(ijson);
+    const index: Index = JSON.parse(await getText('/logIndex.json'));
+    const songs: SongEntry[] = [];
+    for (const row of index) {
+      for (let i = 0; i < row.lines; i++) {
+        songs.push({ file: row.file, ix: i, duration_ms: row.durations_ms[i], dirty: false });
+      }
+    }
 
-    const onSave = async (events: SongEvent[]) => {
-      const payload: Song = {
-        uuid: crypto.randomUUID(),
-        start: new Date().toJSON(),
-        events
-      };
-      const req = new Request('/api/save', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const res = await (await fetch(req)).json();
-      console.log(res);
-      timing.isFirstEvent = true;
-    };
+    const onSave = () => { timing.isFirstEvent = true; };
 
-    const app = init({ index, output, onSave });
+    const app = init({ songs, output, onSave });
 
     input.addEventListener('midimessage', e => {
       console.log(e.data);

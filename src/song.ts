@@ -8,6 +8,15 @@ export type Song = {
   uuid?: string,
   start: string, // date
   events: SongEvent[],
+  tags?: Tag[],
+};
+
+export type SongEntry = {
+  file: string;
+  ix: number;
+  duration_ms: number;
+  song?: Song;       // undefined = not yet loaded from server
+  dirty: boolean;
 };
 
 export type TimedSong = {
@@ -49,7 +58,7 @@ export function timedSong(song: Song): TimedSong {
     const rv = { message: event.message, time_ms: time_ms };
     return rv;
   });
-  return { start: song.start, events };
+  return { start: song.start, events, tags: song.tags };
 }
 
 export function noteSong(timedSong: TimedSong): NoteSong {

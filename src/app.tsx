@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import { useRef, useState, useEffect } from 'react';
-import { Index, TimedSong, noteSong, timedSong, SongEvent, Tag } from './song';
+import { Song, SongEntry, noteSong, timedSong, SongEvent, Tag } from './song';
 import { useCanvas } from './use-canvas';
 import { getText, unreachable } from './util';
 import { AudioOutput, OutputMode, send, allNotesOff, setMode } from './audio-output';
@@ -50,13 +50,7 @@ function SidebarButton({ icon, active, onClick }: { icon: React.ReactNode, activ
 }
 
 // Files panel
-function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: Dispatch, currentSong: SongIx | undefined }) {
-  const rows: { file: string, ix: number, duration_ms: number }[] = [];
-  for (const row of index) {
-    for (let i = 0; i < row.lines; i++) {
-      rows.push({ file: row.file, ix: i, duration_ms: row.durations_ms[i] });
-    }
-  }
+function FilesPanel({ songs, dispatch, currentSong }: { songs: SongEntry[], dispatch: Dispatch, currentSong: SongIx | undefined }) {
   return (
     <div className="files-panel">
       <h3 className="panel-header">Entries</h3>
@@ -66,7 +60,7 @@ function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: 
             <tr><th>date</th><th>#</th><th>dur</th></tr>
           </thead>
           <tbody>
-            {rows.map(({ file, ix, duration_ms }) => {
+            {songs.map(({ file, ix, duration_ms, dirty }) => {
               const isActive = currentSong && currentSong.file === file && currentSong.ix === ix;
               return (
                 <tr
@@ -74,7 +68,7 @@ function FilesPanel({ index, dispatch, currentSong }: { index: Index, dispatch: 
                   className={cx('files-row', isActive && 'active')}
                   onClick={() => dispatch({ t: 'playFile', file, ix })}
                 >
-                  <td>{file.replace(/\.json$/, '')}</td>
+                  <td>{file.replace(/\.json$/, '')}{dirty ? ' *' : ''}</td>
                   <td>{ix}</td>
                   <td>{formatDuration(duration_ms)}</td>
                 </tr>
@@ -133,9 +127,11 @@ function SettingsPanel({ outputMode, hasMidi, dispatch }: { outputMode: OutputMo
 }
 
 function App(props: AppProps): JSX.Element {
-  const { index, output, onSave, dispatchRef } = props;
+  const { songs: initialSongs, output, onSave, dispatchRef } = props;
   const [state, setState] = useState<AppState>({
+    songs: initialSongs,
     playback: undefined,
+    rawSong: undefined,
     song: undefined,
     nSong: undefined,
     songIx: undefined,
@@ -155,21 +151,47 @@ function App(props: AppProps): JSX.Element {
     () => { }
   );
 
+  // Pre-fetch song text so we have it available; cache check happens inside setState
+  const fetchedSongsRef = useRef<Map<string, string>>(new Map());
+
   const playCallback = async (file: string, ix: number) => {
     // Silence any currently playing notes before loading new song
     allNotesOff(output);
 
-    const lines = (await getText(`/log/${file}`)).split('\n');
-    const raw = JSON.parse(lines[ix]);
-    const song = timedSong(raw);
-    const nSong = noteSong(song);
+    // Always fetch the file text so it's available (may already be cached in entry.song)
+    const key = `${file}`;
+    if (!fetchedSongsRef.current.has(key)) {
+      fetchedSongsRef.current.set(key, await getText(`/log/${file}`));
+    }
+    const fileText = fetchedSongsRef.current.get(key)!;
 
-    const startTime_ms = window.performance.now();
-    const playhead: Playhead = { eventIndex: 0, nowTime_ms: startTime_ms, fastNowTime_ms: startTime_ms };
-
-    // Load in paused state - user must click Play to start
     setState(s => {
-      return { ...s, song: song, nSong: nSong, songIx: { file, ix }, playback: { timeoutId: 0, playhead, startTime_ms, pausedAt_ms: startTime_ms } };
+      const entry = s.songs.find(e => e.file === file && e.ix === ix);
+      let raw: Song;
+      let newSongs = s.songs;
+      if (entry?.song) {
+        raw = entry.song;
+      } else {
+        const lines = fileText.split('\n');
+        raw = JSON.parse(lines[ix]);
+        // Cache it (not dirty — just caching server data)
+        newSongs = s.songs.map(e => e.file === file && e.ix === ix ? { ...e, song: raw } : e);
+      }
+
+      const song = timedSong(raw);
+      const nSong = noteSong(song);
+      const startTime_ms = window.performance.now();
+      const playhead: Playhead = { eventIndex: 0, nowTime_ms: startTime_ms, fastNowTime_ms: startTime_ms };
+
+      return {
+        ...s,
+        songs: newSongs,
+        rawSong: raw,
+        song,
+        nSong,
+        songIx: { file, ix },
+        playback: { timeoutId: 0, playhead, startTime_ms, pausedAt_ms: startTime_ms },
+      };
     });
   };
 
@@ -309,23 +331,44 @@ function App(props: AppProps): JSX.Element {
         break;
       case 'addTag':
         setState(s => {
-          if (!s.song) return s;
+          if (!s.song || !s.rawSong || !s.songIx) return s;
           const tags = [...(s.song.tags || []), action.tag];
-          return { ...s, song: { ...s.song, tags } };
+          const rawSong = { ...s.rawSong, tags };
+          const { file, ix } = s.songIx;
+          return {
+            ...s,
+            song: { ...s.song, tags },
+            rawSong,
+            songs: s.songs.map(e => e.file === file && e.ix === ix ? { ...e, song: rawSong, dirty: true } : e),
+          };
         });
         break;
       case 'moveTag':
         setState(s => {
-          if (!s.song?.tags) return s;
+          if (!s.song?.tags || !s.rawSong || !s.songIx) return s;
           const tags = s.song.tags.map((t, i) => i === action.index ? action.tag : t);
-          return { ...s, song: { ...s.song, tags } };
+          const rawSong = { ...s.rawSong, tags };
+          const { file, ix } = s.songIx;
+          return {
+            ...s,
+            song: { ...s.song, tags },
+            rawSong,
+            songs: s.songs.map(e => e.file === file && e.ix === ix ? { ...e, song: rawSong, dirty: true } : e),
+          };
         });
         break;
       case 'renameTag':
         setState(s => {
-          if (!s.song?.tags) return s;
+          if (!s.song?.tags || !s.rawSong || !s.songIx) return s;
           const tags = s.song.tags.map((t, i) => i === action.index ? { ...t, label: action.label } : t);
-          return { ...s, song: { ...s.song, tags } };
+          const rawSong = { ...s.rawSong, tags };
+          const { file, ix } = s.songIx;
+          return {
+            ...s,
+            song: { ...s.song, tags },
+            rawSong,
+            songs: s.songs.map(e => e.file === file && e.ix === ix ? { ...e, song: rawSong, dirty: true } : e),
+          };
         });
         break;
       default:
@@ -336,9 +379,28 @@ function App(props: AppProps): JSX.Element {
   // Expose dispatch to parent
   dispatchRef.current = dispatch;
 
-  const handleSave = async () => {
-    await onSave(state.pendingEvents);
-    dispatch({ t: 'clearPendingEvents' });
+  const handleSave = () => {
+    const events = state.pendingEvents;
+    if (events.length === 0) return;
+    const song: Song = {
+      uuid: crypto.randomUUID(),
+      start: new Date().toJSON(),
+      events,
+    };
+    // Compute duration from events
+    let total_us = 0;
+    for (const ev of events) {
+      const midi_us = ev.delta.midi_us > 0x100000000 ? 0 : ev.delta.midi_us;
+      total_us += midi_us;
+    }
+    const duration_ms = total_us / 1000;
+    const file = new Date().toJSON().replace(/T.*/, '') + '.json';
+    setState(s => {
+      const ix = s.songs.filter(e => e.file === file).length;
+      const entry: SongEntry = { file, ix, duration_ms, song, dirty: true };
+      return { ...s, songs: [...s.songs, entry], pendingEvents: [] };
+    });
+    onSave(); // just resets timing
   };
 
   const handleDiscard = () => {
@@ -512,12 +574,32 @@ function App(props: AppProps): JSX.Element {
     setEditingTag(null);
   }
 
+  const isDirty = state.songs.some(e => e.dirty);
+
+  const handleGlobalSave = async () => {
+    const dirtyEntries = state.songs.filter(e => e.dirty && e.song);
+    for (const entry of dirtyEntries) {
+      await fetch(new Request('/api/save', {
+        method: 'POST',
+        body: JSON.stringify({ song: entry.song, file: entry.file, ix: entry.ix }),
+        headers: { 'Content-Type': 'application/json' },
+      }));
+    }
+    setState(s => ({
+      ...s,
+      songs: s.songs.map(e => e.dirty ? { ...e, dirty: false } : e),
+    }));
+  };
+
   return (
     <div className="app-container">
       <div className="navbar">
         <span>midi notebook</span>
         {state.songIx && (state.songIx.file.replace(/\.json$/, '') + '/' + state.songIx.ix)}
         <div className="transport">
+          <button className="transport-btn" onClick={handleGlobalSave} disabled={!isDirty}>
+            <img src="/icons/save.svg" width={18} height={18} />
+          </button>
           {state.playback && state.song && (
             formatDuration(state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms)
             + '/' +
@@ -592,7 +674,7 @@ function App(props: AppProps): JSX.Element {
           {activePanel !== null && (
             <div className="sidebar-panel">
               {activePanel === 'files' && (
-                <FilesPanel index={index} dispatch={dispatch} currentSong={state.songIx} />
+                <FilesPanel songs={state.songs} dispatch={dispatch} currentSong={state.songIx} />
               )}
               {activePanel === 'recording' && (
                 <RecordingPanel pendingEvents={state.pendingEvents} onSave={handleSave} onDiscard={handleDiscard} />

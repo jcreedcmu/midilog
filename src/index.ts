@@ -49,13 +49,13 @@ app.get('/logIndex.json', (req, res) => {
 app.use(express.static(path.resolve(__dirname, '../public')));
 
 app.post('/api/save', (req, res) => {
-  const basename = (new Date()).toJSON().replace(/T.*/, '');
-  console.log(JSON.stringify(req.body, null, 2));
-  fs.appendFileSync(
-    path.resolve(__dirname, `../log/${basename}.json`),
-    JSON.stringify(req.body) + '\n',
-    'utf8'
-  );
+  const { song, file, ix } = req.body;
+  const filePath = path.resolve(__dirname, `../log/${file}`);
+  const lines = fs.existsSync(filePath)
+    ? fs.readFileSync(filePath, 'utf8').split('\n').filter(x => x.length > 0)
+    : [];
+  lines[ix] = JSON.stringify(song);
+  fs.writeFileSync(filePath, lines.join('\n') + '\n', 'utf8');
   res.json({ ok: true });
 });
 

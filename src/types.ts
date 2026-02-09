@@ -1,4 +1,4 @@
-import { Index, NoteSong, TimedSong, SongEvent, Tag } from './song';
+import { NoteSong, Song, SongEntry, TimedSong, SongEvent, Tag } from './song';
 import { AudioOutput, OutputMode } from './audio-output';
 
 export type PlayCallback = (file: string, ix: number) => void;
@@ -6,9 +6,9 @@ export type PlayCallback = (file: string, ix: number) => void;
 export const PLAYBACK_ANTICIPATION_MS = 50;
 
 export type InitProps = {
-  index: Index,
+  songs: SongEntry[],
   output: AudioOutput,
-  onSave: (events: SongEvent[]) => Promise<void>,
+  onSave: () => void,
 };
 
 export type AppProps = InitProps & {
@@ -33,7 +33,9 @@ export type Playback = {
 };
 
 export type AppState = {
+  songs: SongEntry[],
   songIx: SongIx | undefined,
+  rawSong: Song | undefined,
   song: TimedSong | undefined,
   nSong: NoteSong | undefined,
   playback: Playback | undefined,
