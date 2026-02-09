@@ -1,88 +1,17 @@
 import { createRoot } from 'react-dom/client';
 import { useRef, useState } from 'react';
-import { pitchColor, Index, NoteSong, TimedSong, noteSong, timedSong, pitchName, SongEvent, Tag } from './song';
-import { CanvasInfo, CanvasRef, useCanvas } from './use-canvas';
+import { Index, TimedSong, noteSong, timedSong, SongEvent, Tag } from './song';
+import { useCanvas } from './use-canvas';
 import { getText, unreachable } from './util';
 import { AudioOutput, OutputMode, send, allNotesOff, setMode } from './audio-output';
+import { renderMainCanvas, TAG_LANE_TOP, TAG_LANE_BOTTOM } from './render-canvas';
+import {
+  AppState, AppProps, AppHandle, InitProps, Action, Dispatch, SongIx,
+  SidebarPanel, Playhead, Playback, CanvasHandlers,
+  cx, formatDuration, findEventIndexAtTime, scheduleNextCallback,
+} from './types';
 
-// Pre-load images for canvas rendering
-const pedalMarkImg = new Image();
-pedalMarkImg.src = '/icons/pedal-mark.svg';
-const tagMarkImg = new Image();
-tagMarkImg.src = '/icons/tag.svg';
-
-// Lane layout constants (in CSS pixels)
-const PEDAL_LANE_TOP = 0;
-const PEDAL_LANE_H = 32;
-const TAG_LANE_TOP = PEDAL_LANE_H;
-const TAG_LANE_H = 32;
-const TAG_LANE_BOTTOM = TAG_LANE_TOP + TAG_LANE_H;
-
-export type PlayCallback = (file: string, ix: number) => void;
-
-// Try to ship off each note playback this
-// many milliseconds before it's actually needed.
-
-const PLAYBACK_ANTICIPATION_MS = 50;
-
-export type InitProps = {
-  index: Index,
-  output: AudioOutput,
-  onSave: (events: SongEvent[]) => Promise<void>,
-};
-
-export type AppProps = InitProps & {
-  dispatchRef: { current: Dispatch | null },
-};
-
-export type AppHandle = {
-  dispatch: Dispatch,
-};
-
-export type Playhead = {
-  eventIndex: number,
-  nowTime_ms: DOMHighResTimeStamp,
-  fastNowTime_ms: DOMHighResTimeStamp,
-};
-
-export type Playback = {
-  timeoutId: number,
-  playhead: Playhead,
-  startTime_ms: DOMHighResTimeStamp,
-  pausedAt_ms: DOMHighResTimeStamp | undefined,  // undefined = playing, number = paused
-};
-
-export type AppState = {
-  songIx: SongIx | undefined,
-  song: TimedSong | undefined,
-  nSong: NoteSong | undefined,
-  playback: Playback | undefined,
-  pendingEvents: SongEvent[],
-  pendingTag: Tag | undefined,
-  pixelPerMs: number,
-};
-
-export type SidebarPanel = 'files' | 'recording' | 'settings';
-
-export type Action =
-  | { t: 'none' }
-  | { t: 'playFile', file: string, ix: number }
-  | { t: 'playNote', message: number[], atTime_ms: number, newIx: number | undefined }
-  | { t: 'idle' }
-  | { t: 'pause' }
-  | { t: 'resume' }
-  | { t: 'seek', delta_ms: number }
-  | { t: 'seekToStart' }
-  | { t: 'seekToEnd' }
-  | { t: 'addPendingEvent', event: SongEvent }
-  | { t: 'clearPendingEvents' }
-  | { t: 'setOutputMode', mode: OutputMode }
-  | { t: 'addTag', tag: Tag }
-  | { t: 'moveTag', index: number, tag: Tag }
-  ;
-
-export type Dispatch = (action: Action) => void;
-export type SongIx = { file: string, ix: number };
+export type { AppHandle, InitProps, Action, Dispatch };
 
 export function init(props: InitProps): AppHandle {
   const dispatchRef: { current: Dispatch | null } = { current: null };
@@ -111,17 +40,6 @@ function Icon({ src, active }: { src: string, active: boolean }) {
   );
 }
 
-function cx(...classes: (string | false | undefined)[]): string {
-  return classes.filter(Boolean).join(' ');
-}
-
-type CanvasHandlers = {
-  onPointerDown: (e: PointerEvent) => void;
-  onPointerMove: (e: PointerEvent) => void;
-  onPointerUp: (e: PointerEvent) => void;
-  onWheel: (e: WheelEvent) => void;
-};
-
 // Sidebar icon button
 function SidebarButton({ icon, active, onClick }: { icon: React.ReactNode, active: boolean, onClick: () => void }) {
   return (
@@ -129,13 +47,6 @@ function SidebarButton({ icon, active, onClick }: { icon: React.ReactNode, activ
       {icon}
     </button>
   );
-}
-
-function formatDuration(ms: number): string {
-  const totalSec = Math.round(ms / 1000);
-  const min = Math.floor(totalSec / 60);
-  const sec = totalSec % 60;
-  return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
 // Files panel
@@ -221,191 +132,6 @@ function SettingsPanel({ outputMode, hasMidi, dispatch }: { outputMode: OutputMo
   );
 }
 
-function playNextNote(song: TimedSong, playhead: Playhead): Action {
-  const { eventIndex, nowTime_ms } = playhead;
-
-  const event = song.events[eventIndex];
-  const newIx = eventIndex + 1 < song.events.length ? eventIndex + 1 : undefined;
-  return { t: 'playNote', message: event.message, atTime_ms: event.time_ms, newIx };
-}
-
-function findEventIndexAtTime(song: TimedSong, time_ms: number): number {
-  for (let i = 0; i < song.events.length; i++) {
-    if (song.events[i].time_ms >= time_ms) {
-      return i;
-    }
-  }
-  return song.events.length - 1;
-}
-
-function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
-  const { d } = ci;
-  const { playback } = state;
-
-  const pixel_of_ms = state.pixelPerMs;
-  const pixel_of_pitch = 10;
-  const vert_offset = 1000;
-  const note_pitch_thickness = 1;
-  const [cw, ch] = [ci.size.x, ci.size.y];
-  const shadowColor = '#577';
-
-  let playHeadPosition_px = 0;
-  if (playback !== undefined) {
-    playHeadPosition_px = (playback.playhead.fastNowTime_ms - playback.startTime_ms) * pixel_of_ms;
-  }
-
-  let xshift = 0;
-
-  // if (playHeadPosition_px > cw / 2) {
-  xshift = cw / 2 - playHeadPosition_px;
-  //}
-  d.fillStyle = "#f0f0f7";
-  d.fillRect(0, 0, cw, ch);
-  const fontHeight = 12;
-
-  d.font = `bold ${fontHeight}px 'Roboto Condensed', sans-serif`;
-  d.textBaseline = 'middle';
-  d.textAlign = 'right';
-  const currentTime_ms = playback ? playback.playhead.fastNowTime_ms - playback.startTime_ms : 0;
-
-  // draw octave lines
-  for (let i = 0; i < 8; i++) {
-    d.save();
-    d.fillStyle = '#bbc';
-    d.fillRect(0, vert_offset - pixel_of_pitch * (11 + i * 12), cw, 1);
-    d.fillStyle = '#dde';
-    d.fillRect(0, vert_offset - pixel_of_pitch * (18 + i * 12), cw, 1);
-  }
-
-  if (state.nSong !== undefined) {
-    // Draw shadows for active notes first (behind everything)
-    state.nSong.events.forEach(event => {
-      if (event.t == 'note') {
-        const isActive = currentTime_ms >= event.time_ms && currentTime_ms <= event.time_ms + event.dur_ms;
-        if (isActive) {
-          d.save();
-          d.shadowColor = shadowColor;
-          d.shadowBlur = 10;
-          d.fillStyle = pitchColor[event.pitch % 12];
-          d.fillRect(
-            xshift + event.time_ms * pixel_of_ms,
-            vert_offset - pixel_of_pitch * event.pitch,
-            event.dur_ms * pixel_of_ms,
-            pixel_of_pitch * note_pitch_thickness);
-          d.restore();
-        }
-      }
-    });
-    // Draw all note rectangles
-    state.nSong.events.forEach(event => {
-      if (event.t == 'note') {
-        const x = xshift + event.time_ms * pixel_of_ms;
-        const y = vert_offset - pixel_of_pitch * event.pitch;
-        const w = event.dur_ms * pixel_of_ms;
-        const h = pixel_of_pitch * note_pitch_thickness;
-        d.fillStyle = pitchColor[event.pitch % 12];
-        d.fillRect(x, y, w, h);
-        if (pixel_of_ms >= 0.05) {
-          const grad = d.createLinearGradient(0, y, 0, y + h);
-          grad.addColorStop(0, 'rgba(255,255,255,0.5)');
-          grad.addColorStop(0.25, 'rgba(255,255,255,0)');
-          grad.addColorStop(0.75, 'rgba(255,255,255,0)');
-          grad.addColorStop(1, 'rgba(0,0,0,0.3)');
-          d.fillStyle = grad;
-          d.fillRect(x, y, w, h);
-        }
-      }
-    });
-    // Draw note labels (only when zoomed in enough)
-    if (pixel_of_ms >= 0.05) {
-      const textXshift = -1;
-      state.nSong.events.forEach(event => {
-        if (event.t == 'note') {
-          d.fillStyle = shadowColor;
-          d.fillText(pitchName[event.pitch % 12],
-            textXshift + xshift + event.time_ms * pixel_of_ms,
-            1 + vert_offset - pixel_of_pitch * event.pitch + pixel_of_pitch * note_pitch_thickness / 2);
-
-          d.fillStyle = pitchColor[event.pitch % 12];
-          d.fillText(pitchName[event.pitch % 12],
-            textXshift + -1 + xshift + event.time_ms * pixel_of_ms,
-            vert_offset - pixel_of_pitch * event.pitch + pixel_of_pitch * note_pitch_thickness / 2);
-        }
-      });
-    }
-
-    // Draw pedal lane
-    d.fillStyle = '#e8e8f0';
-    d.fillRect(0, PEDAL_LANE_TOP, cw, PEDAL_LANE_H);
-
-    d.strokeStyle = '#bbc';
-    d.lineWidth = 1;
-    d.beginPath();
-    d.moveTo(0, PEDAL_LANE_TOP + PEDAL_LANE_H - 0.5);
-    d.lineTo(cw, PEDAL_LANE_TOP + PEDAL_LANE_H - 0.5);
-    d.stroke();
-
-    state.nSong.events.forEach(event => {
-      if (event.t == 'pedal') {
-        const x = xshift + event.time_ms * pixel_of_ms;
-        const w = event.dur_ms * pixel_of_ms;
-        d.fillStyle = '#c0c4d0';
-        d.fillRect(x, PEDAL_LANE_TOP, w, PEDAL_LANE_H);
-      }
-    });
-
-    if (pedalMarkImg.complete) {
-      const markH = 16;
-      const scale = markH / pedalMarkImg.naturalHeight;
-      const markW = pedalMarkImg.naturalWidth * scale;
-      d.drawImage(pedalMarkImg, cw - markW - 6, PEDAL_LANE_TOP + (PEDAL_LANE_H - markH) / 2, markW, markH);
-    }
-
-    // Draw tag lane
-    d.fillStyle = '#ebf2fc';
-    d.fillRect(0, TAG_LANE_TOP, cw, TAG_LANE_H);
-
-    d.strokeStyle = '#bbc';
-    d.lineWidth = 1;
-    d.beginPath();
-    d.moveTo(0, TAG_LANE_BOTTOM - 0.5);
-    d.lineTo(cw, TAG_LANE_BOTTOM - 0.5);
-    d.stroke();
-
-    // Draw tag bars (committed + pending)
-    const allTags = [...(state.song?.tags || [])];
-    if (state.pendingTag) allTags.push(state.pendingTag);
-    allTags.forEach(tag => {
-      const x = xshift + tag.start_ms * pixel_of_ms;
-      const w = (tag.end_ms - tag.start_ms) * pixel_of_ms;
-      const margin = 3;
-      d.save();
-      d.fillStyle = pitchColor[0];
-      d.beginPath();
-      d.roundRect(x, TAG_LANE_TOP + margin - 0.5, w, TAG_LANE_H - margin * 2, 10);
-      d.fill();
-      d.clip();
-      d.fillStyle = 'white';
-      d.fillText(tag.label, x + 25, TAG_LANE_TOP + TAG_LANE_H / 2);
-      d.textAlign = 'left';
-      d.textBaseline = 'middle';
-      d.restore();
-    });
-
-    if (tagMarkImg.complete) {
-      const markH = 16;
-      const scale = markH / tagMarkImg.naturalHeight;
-      const markW = tagMarkImg.naturalWidth * scale;
-      d.drawImage(tagMarkImg, cw - markW - 6, TAG_LANE_TOP + (TAG_LANE_H - markH) / 2, markW, markH);
-    }
-  }
-
-  if (playback !== undefined) {
-    d.fillStyle = 'black';
-    d.fillRect(xshift + playHeadPosition_px, 0, 2, ch);
-  }
-}
-
 function App(props: AppProps): JSX.Element {
   const { index, output, onSave, dispatchRef } = props;
   const [state, setState] = useState<AppState>({
@@ -422,12 +148,12 @@ function App(props: AppProps): JSX.Element {
     setActivePanel(prev => prev === panel ? null : panel);
   };
   const [cref, mc] = useCanvas(
-    state, _renderMainCanvas,
+    state, renderMainCanvas,
     [state.playback?.playhead.fastNowTime_ms, state.playback, state.song, state.song?.tags, state.pendingTag, state.pixelPerMs],
     () => { }
   );
 
-  const playCallback: PlayCallback = async (file, ix) => {
+  const playCallback = async (file: string, ix: number) => {
     // Silence any currently playing notes before loading new song
     allNotesOff(output);
 
@@ -799,23 +525,4 @@ function App(props: AppProps): JSX.Element {
       </div>
     </div>
   );
-}
-
-function scheduleNextCallback(s: AppState, dispatch: Dispatch): AppState {
-  const { song, playback } = s;
-  if (playback === undefined || song === undefined)
-    return s;
-
-  const newIx = playback.playhead.eventIndex;
-
-  const delay = Math.max(0,
-    playback.startTime_ms + song.events[newIx].time_ms - window.performance.now() - PLAYBACK_ANTICIPATION_MS);
-
-  if (delay > PLAYBACK_ANTICIPATION_MS) {
-    requestAnimationFrame(() => dispatch({ t: 'idle' }));
-  } else {
-    requestAnimationFrame(() => dispatch(playNextNote(song, playback.playhead)));
-  }
-  playback.playhead.fastNowTime_ms = window.performance.now();
-  return s;
 }
