@@ -77,6 +77,7 @@ export type Action =
   | { t: 'clearPendingEvents' }
   | { t: 'setOutputMode', mode: OutputMode }
   | { t: 'addTag', tag: Tag }
+  | { t: 'moveTag', index: number, tag: Tag }
   ;
 
 export type Dispatch = (action: Action) => void;
@@ -578,6 +579,13 @@ function App(props: AppProps): JSX.Element {
           return { ...s, song: { ...s.song, tags } };
         });
         break;
+      case 'moveTag':
+        setState(s => {
+          if (!s.song?.tags) return s;
+          const tags = s.song.tags.map((t, i) => i === action.index ? action.tag : t);
+          return { ...s, song: { ...s.song, tags } };
+        });
+        break;
       default:
         unreachable(action);
     }
@@ -596,7 +604,10 @@ function App(props: AppProps): JSX.Element {
   };
 
   const dragRef = useRef<{ startX: number, didDrag: boolean } | null>(null);
-  const tagDragRef = useRef<{ startTime_ms: number } | null>(null);
+  type TagDrag =
+    | { mode: 'create', startTime_ms: number }
+    | { mode: 'move', index: number, grabOffset_ms: number, tag: Tag };
+  const tagDragRef = useRef<TagDrag | null>(null);
   const MS_PER_PIXEL = 10; // inverse of pixel_of_ms = 1/10
 
   function canvasXToTime(cssX: number): number {
@@ -607,6 +618,15 @@ function App(props: AppProps): JSX.Element {
     return (cssX - xshift) * MS_PER_PIXEL;
   }
 
+  function findTagAtTime(time_ms: number): number {
+    const tags = state.song?.tags;
+    if (!tags) return -1;
+    for (let i = tags.length - 1; i >= 0; i--) {
+      if (time_ms >= tags[i].start_ms && time_ms <= tags[i].end_ms) return i;
+    }
+    return -1;
+  }
+
   const canvasHandlers: CanvasHandlers = {
     onPointerDown: (e: PointerEvent) => {
       (e.target as Element).setPointerCapture(e.pointerId);
@@ -615,7 +635,14 @@ function App(props: AppProps): JSX.Element {
       const cssX = e.clientX - rect.left;
 
       if (cssY >= TAG_LANE_TOP && cssY < TAG_LANE_BOTTOM && state.playback) {
-        tagDragRef.current = { startTime_ms: canvasXToTime(cssX) };
+        const time_ms = canvasXToTime(cssX);
+        const hitIndex = findTagAtTime(time_ms);
+        if (hitIndex >= 0) {
+          const tag = state.song!.tags![hitIndex];
+          tagDragRef.current = { mode: 'move', index: hitIndex, grabOffset_ms: time_ms - tag.start_ms, tag };
+        } else {
+          tagDragRef.current = { mode: 'create', startTime_ms: time_ms };
+        }
       } else {
         dragRef.current = { startX: e.clientX, didDrag: false };
       }
@@ -624,16 +651,25 @@ function App(props: AppProps): JSX.Element {
       if (tagDragRef.current !== null) {
         const rect = (e.target as Element).getBoundingClientRect();
         const cssX = e.clientX - rect.left;
-        const endTime_ms = canvasXToTime(cssX);
-        const startTime_ms = tagDragRef.current.startTime_ms;
-        setState(s => ({
-          ...s,
-          pendingTag: {
-            label: 'tag',
-            start_ms: Math.min(startTime_ms, endTime_ms),
-            end_ms: Math.max(startTime_ms, endTime_ms),
-          }
-        }));
+        const time_ms = canvasXToTime(cssX);
+        const td = tagDragRef.current;
+        if (td.mode === 'create') {
+          setState(s => ({
+            ...s,
+            pendingTag: {
+              label: 'tag',
+              start_ms: Math.min(td.startTime_ms, time_ms),
+              end_ms: Math.max(td.startTime_ms, time_ms),
+            }
+          }));
+        } else {
+          const dur = td.tag.end_ms - td.tag.start_ms;
+          const newStart = time_ms - td.grabOffset_ms;
+          dispatch({
+            t: 'moveTag', index: td.index,
+            tag: { ...td.tag, start_ms: newStart, end_ms: newStart + dur },
+          });
+        }
         return;
       }
       if (dragRef.current === null) return;
@@ -646,21 +682,24 @@ function App(props: AppProps): JSX.Element {
     },
     onPointerUp: (e: PointerEvent) => {
       if (tagDragRef.current !== null) {
-        const rect = (e.target as Element).getBoundingClientRect();
-        const cssX = e.clientX - rect.left;
-        const endTime_ms = canvasXToTime(cssX);
-        const startTime_ms = tagDragRef.current.startTime_ms;
-        if (Math.abs(endTime_ms - startTime_ms) > 100) {
-          dispatch({
-            t: 'addTag',
-            tag: {
-              label: 'tag',
-              start_ms: Math.min(startTime_ms, endTime_ms),
-              end_ms: Math.max(startTime_ms, endTime_ms),
-            }
-          });
+        const td = tagDragRef.current;
+        if (td.mode === 'create') {
+          const rect = (e.target as Element).getBoundingClientRect();
+          const cssX = e.clientX - rect.left;
+          const endTime_ms = canvasXToTime(cssX);
+          if (Math.abs(endTime_ms - td.startTime_ms) > 100) {
+            dispatch({
+              t: 'addTag',
+              tag: {
+                label: 'tag',
+                start_ms: Math.min(td.startTime_ms, endTime_ms),
+                end_ms: Math.max(td.startTime_ms, endTime_ms),
+              }
+            });
+          }
+          setState(s => ({ ...s, pendingTag: undefined }));
         }
-        setState(s => ({ ...s, pendingTag: undefined }));
+        // move mode: final position already applied via moveTag dispatches
         tagDragRef.current = null;
       } else {
         if (dragRef.current !== null && !dragRef.current.didDrag && state.playback !== undefined) {
