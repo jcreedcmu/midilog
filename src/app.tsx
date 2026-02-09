@@ -348,7 +348,8 @@ function App(props: AppProps): JSX.Element {
   const dragRef = useRef<{ startX: number, didDrag: boolean } | null>(null);
   type TagDrag =
     | { mode: 'create', startTime_ms: number }
-    | { mode: 'move', index: number, grabOffset_ms: number, tag: Tag };
+    | { mode: 'move', index: number, grabOffset_ms: number, tag: Tag }
+    | { mode: 'resize', index: number, tag: Tag };
   const tagDragRef = useRef<TagDrag | null>(null);
   const msPerPixel = 1 / state.pixelPerMs;
 
@@ -389,7 +390,12 @@ function App(props: AppProps): JSX.Element {
         const hitIndex = findTagAtTime(time_ms);
         if (hitIndex >= 0) {
           const tag = state.song!.tags![hitIndex];
-          tagDragRef.current = { mode: 'move', index: hitIndex, grabOffset_ms: time_ms - tag.start_ms, tag };
+          const tagRightCssX = timeToCanvasX(tag.end_ms);
+          if (tagRightCssX - cssX < 20) {
+            tagDragRef.current = { mode: 'resize', index: hitIndex, tag };
+          } else {
+            tagDragRef.current = { mode: 'move', index: hitIndex, grabOffset_ms: time_ms - tag.start_ms, tag };
+          }
         } else {
           tagDragRef.current = { mode: 'create', startTime_ms: time_ms };
         }
@@ -412,12 +418,18 @@ function App(props: AppProps): JSX.Element {
               end_ms: Math.max(td.startTime_ms, time_ms),
             }
           }));
-        } else {
+        } else if (td.mode === 'move') {
           const dur = td.tag.end_ms - td.tag.start_ms;
           const newStart = time_ms - td.grabOffset_ms;
           dispatch({
             t: 'moveTag', index: td.index,
             tag: { ...td.tag, start_ms: newStart, end_ms: newStart + dur },
+          });
+        } else if (td.mode === 'resize') {
+          const newEnd = Math.max(td.tag.start_ms + 100, time_ms);
+          dispatch({
+            t: 'moveTag', index: td.index,
+            tag: { ...td.tag, end_ms: newEnd },
           });
         }
         return;
