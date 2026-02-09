@@ -5,9 +5,11 @@ import { CanvasInfo, CanvasRef, useCanvas } from './use-canvas';
 import { getText, unreachable } from './util';
 import { AudioOutput, OutputMode, send, allNotesOff, setMode } from './audio-output';
 
-// Pre-load pedal mark image for canvas rendering
+// Pre-load images for canvas rendering
 const pedalMarkImg = new Image();
 pedalMarkImg.src = '/icons/pedal-mark.svg';
+const tagMarkImg = new Image();
+tagMarkImg.src = '/icons/tag.svg';
 
 export type PlayCallback = (file: string, ix: number) => void;
 
@@ -348,6 +350,30 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
       const scale = markH / pedalMarkImg.naturalHeight;
       const markW = pedalMarkImg.naturalWidth * scale;
       d.drawImage(pedalMarkImg, cw - markW - 6, (pedalLaneH - markH) / 2, markW, markH);
+    }
+
+    // Draw tag lane
+    const tagLaneY = pedalLaneH;
+    const tagLaneH = 32;
+
+    // Lane background
+    d.fillStyle = '#f0ece8';
+    d.fillRect(0, tagLaneY, cw, tagLaneH);
+
+    // Lane divider
+    d.strokeStyle = '#bbc';
+    d.lineWidth = 1;
+    d.beginPath();
+    d.moveTo(0, tagLaneY + tagLaneH - 0.5);
+    d.lineTo(cw, tagLaneY + tagLaneH - 0.5);
+    d.stroke();
+
+    // Tag label, fixed on the right
+    if (tagMarkImg.complete) {
+      const markH = 16;
+      const scale = markH / tagMarkImg.naturalHeight;
+      const markW = tagMarkImg.naturalWidth * scale;
+      d.drawImage(tagMarkImg, cw - markW - 6, tagLaneY + (tagLaneH - markH) / 2, markW, markH);
     }
   }
 
