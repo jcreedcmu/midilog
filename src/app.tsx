@@ -355,7 +355,7 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
     }
 
     // Draw tag lane
-    d.fillStyle = '#f0ece8';
+    d.fillStyle = '#ebf2fc';
     d.fillRect(0, TAG_LANE_TOP, cw, TAG_LANE_H);
 
     d.strokeStyle = '#bbc';
@@ -371,8 +371,18 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
     allTags.forEach(tag => {
       const x = xshift + tag.start_ms * pixel_of_ms;
       const w = (tag.end_ms - tag.start_ms) * pixel_of_ms;
-      d.fillStyle = '#d0c4b0';
-      d.fillRect(x, TAG_LANE_TOP, w, TAG_LANE_H);
+      const margin = 3;
+      d.save();
+      d.fillStyle = pitchColor[0];
+      d.beginPath();
+      d.roundRect(x, TAG_LANE_TOP + margin - 0.5, w, TAG_LANE_H - margin * 2, 10);
+      d.fill();
+      d.clip();
+      d.fillStyle = 'white';
+      d.fillText(tag.label, x + 25, TAG_LANE_TOP + TAG_LANE_H / 2);
+      d.textAlign = 'left';
+      d.textBaseline = 'middle';
+      d.restore();
     });
 
     if (tagMarkImg.complete) {
