@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import { useRef, useState } from 'react';
-import { pitchColor, Index, NoteSong, TimedSong, noteSong, timedSong, pitchName, SongEvent, Tag } from './song';
+import { pitchColor, Index, NoteSong, TimedSong, noteSong, timedSong, pitchName, SongEvent } from './song';
 import { CanvasInfo, CanvasRef, useCanvas } from './use-canvas';
 import { getText, unreachable } from './util';
 import { AudioOutput, OutputMode, send, allNotesOff, setMode } from './audio-output';
@@ -45,15 +45,13 @@ export type Playback = {
 
 export type AppState = {
   songIx: SongIx | undefined,
-  songUuid: string | undefined,
   song: TimedSong | undefined,
   nSong: NoteSong | undefined,
   playback: Playback | undefined,
   pendingEvents: SongEvent[],
-  tags: Tag[],
 };
 
-export type SidebarPanel = 'files' | 'recording' | 'settings' | 'tags';
+export type SidebarPanel = 'files' | 'recording' | 'settings';
 
 export type Action =
   | { t: 'none' }
@@ -68,8 +66,6 @@ export type Action =
   | { t: 'addPendingEvent', event: SongEvent }
   | { t: 'clearPendingEvents' }
   | { t: 'setOutputMode', mode: OutputMode }
-  | { t: 'addTag', tag: Tag }
-  | { t: 'removeTag', index: number }
   ;
 
 export type Dispatch = (action: Action) => void;
@@ -207,48 +203,6 @@ function SettingsPanel({ outputMode, hasMidi, dispatch }: { outputMode: OutputMo
           MIDI Device {!hasMidi && '(not connected)'}
         </button>
       </div>
-    </div>
-  );
-}
-
-// Tags panel
-function TagsPanel({ tags, songUuid, tagLabel, setTagLabel, dispatch }: {
-  tags: Tag[],
-  songUuid: string | undefined,
-  tagLabel: string,
-  setTagLabel: (v: string) => void,
-  dispatch: Dispatch,
-}) {
-  if (!songUuid) {
-    return (
-      <div className="panel-content">
-        <h3 className="panel-header">Tags</h3>
-        <div className="tag-hint">Load a song to add tags</div>
-      </div>
-    );
-  }
-  return (
-    <div className="panel-content">
-      <h3 className="panel-header">Tags</h3>
-      <input
-        className="tag-input"
-        type="text"
-        placeholder="Tag label..."
-        value={tagLabel}
-        onChange={e => setTagLabel((e.target as HTMLInputElement).value)}
-      />
-      <div className="tag-hint">Drag on piano roll to create a tag</div>
-      {tags.length > 0 && (
-        <ul className="tag-list">
-          {tags.map((tag, i) => (
-            <li key={i} className="tag-item">
-              <span className="tag-label">{tag.label}</span>
-              <span className="tag-range">{formatDuration(tag.start_ms)}&ndash;{formatDuration(tag.end_ms)}</span>
-              <button className="tag-remove" onClick={() => dispatch({ t: 'removeTag', index: i })}>&#215;</button>
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }
@@ -391,46 +345,6 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
     });
   }
 
-  // Draw tags
-  if (state.tags && state.tags.length > 0) {
-    const tagY = 20;
-    const tagH = 24;
-    const tagRadius = 4;
-    state.tags.forEach(tag => {
-      const x1 = xshift + tag.start_ms * pixel_of_ms;
-      const x2 = xshift + tag.end_ms * pixel_of_ms;
-      const w = x2 - x1;
-
-      // Round-rect background
-      d.save();
-      d.globalAlpha = 0.25;
-      d.fillStyle = '#4a9eff';
-      d.beginPath();
-      d.roundRect(x1, tagY, w, tagH, tagRadius);
-      d.fill();
-      d.restore();
-
-      // Border
-      d.save();
-      d.strokeStyle = '#4a9eff';
-      d.lineWidth = 1.5;
-      d.beginPath();
-      d.roundRect(x1, tagY, w, tagH, tagRadius);
-      d.stroke();
-      d.restore();
-
-      // Label text
-      d.save();
-      d.fillStyle = '#224';
-      d.font = `bold 11px 'Roboto Condensed', sans-serif`;
-      d.textBaseline = 'middle';
-      d.textAlign = 'left';
-      const textX = x1 + 4;
-      d.fillText(tag.label, textX, tagY + tagH / 2);
-      d.restore();
-    });
-  }
-
   if (playback !== undefined) {
     d.fillStyle = 'black';
     d.fillRect(xshift + playHeadPosition_px, 0, 2, ch);
@@ -444,18 +358,15 @@ function App(props: AppProps): JSX.Element {
     song: undefined,
     nSong: undefined,
     songIx: undefined,
-    songUuid: undefined,
-    pendingEvents: [],
-    tags: [],
+    pendingEvents: []
   });
   const [activePanel, setActivePanel] = useState<SidebarPanel | null>('files');
-  const [tagLabel, setTagLabel] = useState('');
   const togglePanel = (panel: SidebarPanel) => {
     setActivePanel(prev => prev === panel ? null : panel);
   };
   const [cref, mc] = useCanvas(
     state, _renderMainCanvas,
-    [state.playback?.playhead.fastNowTime_ms, state.playback, state.song, state.tags],
+    [state.playback?.playhead.fastNowTime_ms, state.playback, state.song],
     () => { }
   );
 
@@ -465,7 +376,6 @@ function App(props: AppProps): JSX.Element {
 
     const lines = (await getText(`/log/${file}`)).split('\n');
     const raw = JSON.parse(lines[ix]);
-    const uuid: string | undefined = raw.uuid;
     const song = timedSong(raw);
     const nSong = noteSong(song);
 
@@ -474,7 +384,7 @@ function App(props: AppProps): JSX.Element {
 
     // Load in paused state - user must click Play to start
     setState(s => {
-      return { ...s, song: song, nSong: nSong, songIx: { file, ix }, songUuid: uuid, tags: [], playback: { timeoutId: 0, playhead, startTime_ms, pausedAt_ms: startTime_ms } };
+      return { ...s, song: song, nSong: nSong, songIx: { file, ix }, playback: { timeoutId: 0, playhead, startTime_ms, pausedAt_ms: startTime_ms } };
     });
   };
 
@@ -612,12 +522,6 @@ function App(props: AppProps): JSX.Element {
         setMode(output, action.mode);
         setState(s => ({ ...s })); // Force re-render to update UI
         break;
-      case 'addTag':
-        setState(s => ({ ...s, tags: [...s.tags, action.tag] }));
-        break;
-      case 'removeTag':
-        setState(s => ({ ...s, tags: s.tags.filter((_, i) => i !== action.index) }));
-        break;
       default:
         unreachable(action);
     }
@@ -636,31 +540,14 @@ function App(props: AppProps): JSX.Element {
   };
 
   const dragRef = useRef<{ startX: number, didDrag: boolean } | null>(null);
-  const tagDragRef = useRef<{ startX: number, startTime_ms: number } | null>(null);
   const MS_PER_PIXEL = 10; // inverse of pixel_of_ms = 1/10
-
-  function canvasXToTime(canvasX: number): number {
-    if (!state.playback || !mc.current) return 0;
-    const cw = mc.current.size.x;
-    const playHeadPosition_px = (state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms) / MS_PER_PIXEL;
-    const xshift = cw / 2 - playHeadPosition_px;
-    return (canvasX - xshift) * MS_PER_PIXEL;
-  }
 
   const canvasHandlers: CanvasHandlers = {
     onPointerDown: (e: PointerEvent) => {
+      dragRef.current = { startX: e.clientX, didDrag: false };
       (e.target as Element).setPointerCapture(e.pointerId);
-      if (activePanel === 'tags' && state.playback) {
-        const rect = (e.target as Element).getBoundingClientRect();
-        const canvasX = e.clientX - rect.left;
-        const time_ms = canvasXToTime(canvasX);
-        tagDragRef.current = { startX: e.clientX, startTime_ms: time_ms };
-      } else {
-        dragRef.current = { startX: e.clientX, didDrag: false };
-      }
     },
     onPointerMove: (e: PointerEvent) => {
-      if (activePanel === 'tags') return; // no-op during tag drag
       if (dragRef.current === null) return;
       const deltaX = e.clientX - dragRef.current.startX;
       if (deltaX !== 0) {
@@ -670,30 +557,11 @@ function App(props: AppProps): JSX.Element {
       }
     },
     onPointerUp: (e: PointerEvent) => {
-      if (activePanel === 'tags' && tagDragRef.current !== null && state.playback) {
-        const rect = (e.target as Element).getBoundingClientRect();
-        const canvasX = e.clientX - rect.left;
-        const endTime_ms = canvasXToTime(canvasX);
-        const startTime_ms = tagDragRef.current.startTime_ms;
-        const label = tagLabel || 'tag';
-        if (Math.abs(endTime_ms - startTime_ms) > 100) { // minimum 100ms drag
-          dispatch({
-            t: 'addTag',
-            tag: {
-              label,
-              start_ms: Math.min(startTime_ms, endTime_ms),
-              end_ms: Math.max(startTime_ms, endTime_ms),
-            }
-          });
-        }
-        tagDragRef.current = null;
-      } else {
-        if (dragRef.current !== null && !dragRef.current.didDrag && state.playback !== undefined) {
-          const isPaused = state.playback.pausedAt_ms !== undefined;
-          dispatch({ t: isPaused ? 'resume' : 'pause' });
-        }
-        dragRef.current = null;
+      if (dragRef.current !== null && !dragRef.current.didDrag && state.playback !== undefined) {
+        const isPaused = state.playback.pausedAt_ms !== undefined;
+        dispatch({ t: isPaused ? 'resume' : 'pause' });
       }
+      dragRef.current = null;
     }
   };
 
@@ -750,11 +618,6 @@ function App(props: AppProps): JSX.Element {
               active={activePanel === 'settings'}
               onClick={() => togglePanel('settings')}
             />
-            <SidebarButton
-              icon={<Icon src="/icons/tag.svg" active={activePanel === 'tags'} />}
-              active={activePanel === 'tags'}
-              onClick={() => togglePanel('tags')}
-            />
           </div>
 
           {activePanel !== null && (
@@ -767,9 +630,6 @@ function App(props: AppProps): JSX.Element {
               )}
               {activePanel === 'settings' && (
                 <SettingsPanel outputMode={output.mode} hasMidi={output.midiOutput !== null} dispatch={dispatch} />
-              )}
-              {activePanel === 'tags' && (
-                <TagsPanel tags={state.tags} songUuid={state.songUuid} tagLabel={tagLabel} setTagLabel={setTagLabel} dispatch={dispatch} />
               )}
             </div>
           )}

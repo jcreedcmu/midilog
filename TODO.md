@@ -20,4 +20,3 @@
 [ ] drag breaks if we leave the window
 [ ] spacebar to stop/start? but make sure it doesn't happen when we're focused on a text element
 [ ] clicking on the loaded song shouldn't reload
-[ ] better behavior on song end
