@@ -70,6 +70,7 @@ export function noteSong(timedSong: TimedSong): NoteSong {
   }
   function noteOff(time_ms: number, pitch: number): void {
     const note = pitchNotes[pitch];
+    if (!note) return; // no matching note-on
     note.dur_ms = time_ms - note.time_ms;
     events.push(note);
     delete pitchNotes[pitch];
@@ -91,6 +92,7 @@ export function noteSong(timedSong: TimedSong): NoteSong {
         }
         else {
           const pedal = pedals[event.message[1]];
+          if (!pedal) break; // no matching pedal-on
           pedal.dur_ms = event.time_ms - pedal.time_ms;
           events.push(pedal);
           delete pedals[event.message[1]];
