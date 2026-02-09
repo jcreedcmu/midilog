@@ -59,6 +59,7 @@ export type AppState = {
   playback: Playback | undefined,
   pendingEvents: SongEvent[],
   pendingTag: Tag | undefined,
+  pixelPerMs: number,
 };
 
 export type SidebarPanel = 'files' | 'recording' | 'settings';
@@ -118,6 +119,7 @@ type CanvasHandlers = {
   onPointerDown: (e: PointerEvent) => void;
   onPointerMove: (e: PointerEvent) => void;
   onPointerUp: (e: PointerEvent) => void;
+  onWheel: (e: WheelEvent) => void;
 };
 
 // Sidebar icon button
@@ -240,7 +242,7 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
   const { d } = ci;
   const { playback } = state;
 
-  const pixel_of_ms = 1 / 10;
+  const pixel_of_ms = state.pixelPerMs;
   const pixel_of_pitch = 10;
   const vert_offset = 1000;
   const note_pitch_thickness = 1;
@@ -303,30 +305,34 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
         const h = pixel_of_pitch * note_pitch_thickness;
         d.fillStyle = pitchColor[event.pitch % 12];
         d.fillRect(x, y, w, h);
-        const grad = d.createLinearGradient(0, y, 0, y + h);
-        grad.addColorStop(0, 'rgba(255,255,255,0.5)');
-        grad.addColorStop(0.25, 'rgba(255,255,255,0)');
-        grad.addColorStop(0.75, 'rgba(255,255,255,0)');
-        grad.addColorStop(1, 'rgba(0,0,0,0.3)');
-        d.fillStyle = grad;
-        d.fillRect(x, y, w, h);
+        if (pixel_of_ms >= 0.05) {
+          const grad = d.createLinearGradient(0, y, 0, y + h);
+          grad.addColorStop(0, 'rgba(255,255,255,0.5)');
+          grad.addColorStop(0.25, 'rgba(255,255,255,0)');
+          grad.addColorStop(0.75, 'rgba(255,255,255,0)');
+          grad.addColorStop(1, 'rgba(0,0,0,0.3)');
+          d.fillStyle = grad;
+          d.fillRect(x, y, w, h);
+        }
       }
     });
-    // Draw note labels
-    const textXshift = -1;
-    state.nSong.events.forEach(event => {
-      if (event.t == 'note') {
-        d.fillStyle = shadowColor;
-        d.fillText(pitchName[event.pitch % 12],
-          textXshift + xshift + event.time_ms * pixel_of_ms,
-          1 + vert_offset - pixel_of_pitch * event.pitch + pixel_of_pitch * note_pitch_thickness / 2);
+    // Draw note labels (only when zoomed in enough)
+    if (pixel_of_ms >= 0.05) {
+      const textXshift = -1;
+      state.nSong.events.forEach(event => {
+        if (event.t == 'note') {
+          d.fillStyle = shadowColor;
+          d.fillText(pitchName[event.pitch % 12],
+            textXshift + xshift + event.time_ms * pixel_of_ms,
+            1 + vert_offset - pixel_of_pitch * event.pitch + pixel_of_pitch * note_pitch_thickness / 2);
 
-        d.fillStyle = pitchColor[event.pitch % 12];
-        d.fillText(pitchName[event.pitch % 12],
-          textXshift + -1 + xshift + event.time_ms * pixel_of_ms,
-          vert_offset - pixel_of_pitch * event.pitch + pixel_of_pitch * note_pitch_thickness / 2);
-      }
-    });
+          d.fillStyle = pitchColor[event.pitch % 12];
+          d.fillText(pitchName[event.pitch % 12],
+            textXshift + -1 + xshift + event.time_ms * pixel_of_ms,
+            vert_offset - pixel_of_pitch * event.pitch + pixel_of_pitch * note_pitch_thickness / 2);
+        }
+      });
+    }
 
     // Draw pedal lane
     d.fillStyle = '#e8e8f0';
@@ -409,6 +415,7 @@ function App(props: AppProps): JSX.Element {
     songIx: undefined,
     pendingEvents: [],
     pendingTag: undefined,
+    pixelPerMs: 1 / 10,
   });
   const [activePanel, setActivePanel] = useState<SidebarPanel | null>('files');
   const togglePanel = (panel: SidebarPanel) => {
@@ -416,7 +423,7 @@ function App(props: AppProps): JSX.Element {
   };
   const [cref, mc] = useCanvas(
     state, _renderMainCanvas,
-    [state.playback?.playhead.fastNowTime_ms, state.playback, state.song, state.song?.tags, state.pendingTag],
+    [state.playback?.playhead.fastNowTime_ms, state.playback, state.song, state.song?.tags, state.pendingTag, state.pixelPerMs],
     () => { }
   );
 
@@ -608,14 +615,14 @@ function App(props: AppProps): JSX.Element {
     | { mode: 'create', startTime_ms: number }
     | { mode: 'move', index: number, grabOffset_ms: number, tag: Tag };
   const tagDragRef = useRef<TagDrag | null>(null);
-  const MS_PER_PIXEL = 10; // inverse of pixel_of_ms = 1/10
+  const msPerPixel = 1 / state.pixelPerMs;
 
   function canvasXToTime(cssX: number): number {
     if (!state.playback || !mc.current) return 0;
     const cw = mc.current.size.x;
-    const playHeadPosition_px = (state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms) / MS_PER_PIXEL;
+    const playHeadPosition_px = (state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms) * state.pixelPerMs;
     const xshift = cw / 2 - playHeadPosition_px;
-    return (cssX - xshift) * MS_PER_PIXEL;
+    return (cssX - xshift) * msPerPixel;
   }
 
   function findTagAtTime(time_ms: number): number {
@@ -676,7 +683,7 @@ function App(props: AppProps): JSX.Element {
       const deltaX = e.clientX - dragRef.current.startX;
       if (deltaX !== 0) {
         dragRef.current.didDrag = true;
-        dispatch({ t: 'seek', delta_ms: -deltaX * MS_PER_PIXEL });
+        dispatch({ t: 'seek', delta_ms: -deltaX * msPerPixel });
         dragRef.current.startX = e.clientX;
       }
     },
@@ -708,6 +715,14 @@ function App(props: AppProps): JSX.Element {
         }
         dragRef.current = null;
       }
+    },
+    onWheel: (e: WheelEvent) => {
+      e.preventDefault();
+      const factor = Math.pow(1.001, -e.deltaY);
+      setState(s => ({
+        ...s,
+        pixelPerMs: Math.min(1, Math.max(1 / 200, s.pixelPerMs * factor)),
+      }));
     }
   };
 
@@ -745,6 +760,7 @@ function App(props: AppProps): JSX.Element {
           onPointerMove={canvasHandlers.onPointerMove}
           onPointerUp={canvasHandlers.onPointerUp}
           onPointerLeave={canvasHandlers.onPointerUp}
+          onWheel={canvasHandlers.onWheel}
         />
 
         <div className="sidebar-overlay">
