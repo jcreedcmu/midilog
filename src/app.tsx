@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import { useRef, useState } from 'react';
-import { pitchColor, Index, NoteSong, TimedSong, noteSong, timedSong, pitchName, SongEvent } from './song';
+import { pitchColor, Index, NoteSong, TimedSong, noteSong, timedSong, pitchName, SongEvent, Tag } from './song';
 import { CanvasInfo, CanvasRef, useCanvas } from './use-canvas';
 import { getText, unreachable } from './util';
 import { AudioOutput, OutputMode, send, allNotesOff, setMode } from './audio-output';
@@ -10,6 +10,13 @@ const pedalMarkImg = new Image();
 pedalMarkImg.src = '/icons/pedal-mark.svg';
 const tagMarkImg = new Image();
 tagMarkImg.src = '/icons/tag.svg';
+
+// Lane layout constants (in CSS pixels)
+const PEDAL_LANE_TOP = 0;
+const PEDAL_LANE_H = 32;
+const TAG_LANE_TOP = PEDAL_LANE_H;
+const TAG_LANE_H = 32;
+const TAG_LANE_BOTTOM = TAG_LANE_TOP + TAG_LANE_H;
 
 export type PlayCallback = (file: string, ix: number) => void;
 
@@ -51,6 +58,7 @@ export type AppState = {
   nSong: NoteSong | undefined,
   playback: Playback | undefined,
   pendingEvents: SongEvent[],
+  pendingTag: Tag | undefined,
 };
 
 export type SidebarPanel = 'files' | 'recording' | 'settings';
@@ -68,6 +76,7 @@ export type Action =
   | { t: 'addPendingEvent', event: SongEvent }
   | { t: 'clearPendingEvents' }
   | { t: 'setOutputMode', mode: OutputMode }
+  | { t: 'addTag', tag: Tag }
   ;
 
 export type Dispatch = (action: Action) => void;
@@ -319,61 +328,58 @@ function _renderMainCanvas(ci: CanvasInfo, state: AppState) {
     });
 
     // Draw pedal lane
-    const pedalLaneH = 32;
-
-    // Lane background
     d.fillStyle = '#e8e8f0';
-    d.fillRect(0, 0, cw, pedalLaneH);
+    d.fillRect(0, PEDAL_LANE_TOP, cw, PEDAL_LANE_H);
 
-    // Lane divider
     d.strokeStyle = '#bbc';
     d.lineWidth = 1;
     d.beginPath();
-    d.moveTo(0, pedalLaneH - 0.5);
-    d.lineTo(cw, pedalLaneH - 0.5);
+    d.moveTo(0, PEDAL_LANE_TOP + PEDAL_LANE_H - 0.5);
+    d.lineTo(cw, PEDAL_LANE_TOP + PEDAL_LANE_H - 0.5);
     d.stroke();
 
-    // Draw pedal bars in the lane
     state.nSong.events.forEach(event => {
       if (event.t == 'pedal') {
         const x = xshift + event.time_ms * pixel_of_ms;
         const w = event.dur_ms * pixel_of_ms;
-
         d.fillStyle = '#c0c4d0';
-        d.fillRect(x, 0, w, pedalLaneH);
+        d.fillRect(x, PEDAL_LANE_TOP, w, PEDAL_LANE_H);
       }
     });
 
-    // Draw Ped label once, fixed on the right
     if (pedalMarkImg.complete) {
       const markH = 16;
       const scale = markH / pedalMarkImg.naturalHeight;
       const markW = pedalMarkImg.naturalWidth * scale;
-      d.drawImage(pedalMarkImg, cw - markW - 6, (pedalLaneH - markH) / 2, markW, markH);
+      d.drawImage(pedalMarkImg, cw - markW - 6, PEDAL_LANE_TOP + (PEDAL_LANE_H - markH) / 2, markW, markH);
     }
 
     // Draw tag lane
-    const tagLaneY = pedalLaneH;
-    const tagLaneH = 32;
-
-    // Lane background
     d.fillStyle = '#f0ece8';
-    d.fillRect(0, tagLaneY, cw, tagLaneH);
+    d.fillRect(0, TAG_LANE_TOP, cw, TAG_LANE_H);
 
-    // Lane divider
     d.strokeStyle = '#bbc';
     d.lineWidth = 1;
     d.beginPath();
-    d.moveTo(0, tagLaneY + tagLaneH - 0.5);
-    d.lineTo(cw, tagLaneY + tagLaneH - 0.5);
+    d.moveTo(0, TAG_LANE_BOTTOM - 0.5);
+    d.lineTo(cw, TAG_LANE_BOTTOM - 0.5);
     d.stroke();
 
-    // Tag label, fixed on the right
+    // Draw tag bars (committed + pending)
+    const allTags = [...(state.song?.tags || [])];
+    if (state.pendingTag) allTags.push(state.pendingTag);
+    allTags.forEach(tag => {
+      const x = xshift + tag.start_ms * pixel_of_ms;
+      const w = (tag.end_ms - tag.start_ms) * pixel_of_ms;
+      d.fillStyle = '#d0c4b0';
+      d.fillRect(x, TAG_LANE_TOP, w, TAG_LANE_H);
+    });
+
     if (tagMarkImg.complete) {
       const markH = 16;
       const scale = markH / tagMarkImg.naturalHeight;
       const markW = tagMarkImg.naturalWidth * scale;
-      d.drawImage(tagMarkImg, cw - markW - 6, tagLaneY + (tagLaneH - markH) / 2, markW, markH);
+      d.drawImage(tagMarkImg, cw - markW - 6, TAG_LANE_TOP + (TAG_LANE_H - markH) / 2, markW, markH);
     }
   }
 
@@ -390,7 +396,8 @@ function App(props: AppProps): JSX.Element {
     song: undefined,
     nSong: undefined,
     songIx: undefined,
-    pendingEvents: []
+    pendingEvents: [],
+    pendingTag: undefined,
   });
   const [activePanel, setActivePanel] = useState<SidebarPanel | null>('files');
   const togglePanel = (panel: SidebarPanel) => {
@@ -398,7 +405,7 @@ function App(props: AppProps): JSX.Element {
   };
   const [cref, mc] = useCanvas(
     state, _renderMainCanvas,
-    [state.playback?.playhead.fastNowTime_ms, state.playback, state.song],
+    [state.playback?.playhead.fastNowTime_ms, state.playback, state.song, state.song?.tags, state.pendingTag],
     () => { }
   );
 
@@ -554,6 +561,13 @@ function App(props: AppProps): JSX.Element {
         setMode(output, action.mode);
         setState(s => ({ ...s })); // Force re-render to update UI
         break;
+      case 'addTag':
+        setState(s => {
+          if (!s.song) return s;
+          const tags = [...(s.song.tags || []), action.tag];
+          return { ...s, song: { ...s.song, tags } };
+        });
+        break;
       default:
         unreachable(action);
     }
@@ -572,14 +586,46 @@ function App(props: AppProps): JSX.Element {
   };
 
   const dragRef = useRef<{ startX: number, didDrag: boolean } | null>(null);
+  const tagDragRef = useRef<{ startTime_ms: number } | null>(null);
   const MS_PER_PIXEL = 10; // inverse of pixel_of_ms = 1/10
+
+  function canvasXToTime(cssX: number): number {
+    if (!state.playback || !mc.current) return 0;
+    const cw = mc.current.size.x;
+    const playHeadPosition_px = (state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms) / MS_PER_PIXEL;
+    const xshift = cw / 2 - playHeadPosition_px;
+    return (cssX - xshift) * MS_PER_PIXEL;
+  }
 
   const canvasHandlers: CanvasHandlers = {
     onPointerDown: (e: PointerEvent) => {
-      dragRef.current = { startX: e.clientX, didDrag: false };
       (e.target as Element).setPointerCapture(e.pointerId);
+      const rect = (e.target as Element).getBoundingClientRect();
+      const cssY = e.clientY - rect.top;
+      const cssX = e.clientX - rect.left;
+
+      if (cssY >= TAG_LANE_TOP && cssY < TAG_LANE_BOTTOM && state.playback) {
+        tagDragRef.current = { startTime_ms: canvasXToTime(cssX) };
+      } else {
+        dragRef.current = { startX: e.clientX, didDrag: false };
+      }
     },
     onPointerMove: (e: PointerEvent) => {
+      if (tagDragRef.current !== null) {
+        const rect = (e.target as Element).getBoundingClientRect();
+        const cssX = e.clientX - rect.left;
+        const endTime_ms = canvasXToTime(cssX);
+        const startTime_ms = tagDragRef.current.startTime_ms;
+        setState(s => ({
+          ...s,
+          pendingTag: {
+            label: 'tag',
+            start_ms: Math.min(startTime_ms, endTime_ms),
+            end_ms: Math.max(startTime_ms, endTime_ms),
+          }
+        }));
+        return;
+      }
       if (dragRef.current === null) return;
       const deltaX = e.clientX - dragRef.current.startX;
       if (deltaX !== 0) {
@@ -589,11 +635,30 @@ function App(props: AppProps): JSX.Element {
       }
     },
     onPointerUp: (e: PointerEvent) => {
-      if (dragRef.current !== null && !dragRef.current.didDrag && state.playback !== undefined) {
-        const isPaused = state.playback.pausedAt_ms !== undefined;
-        dispatch({ t: isPaused ? 'resume' : 'pause' });
+      if (tagDragRef.current !== null) {
+        const rect = (e.target as Element).getBoundingClientRect();
+        const cssX = e.clientX - rect.left;
+        const endTime_ms = canvasXToTime(cssX);
+        const startTime_ms = tagDragRef.current.startTime_ms;
+        if (Math.abs(endTime_ms - startTime_ms) > 100) {
+          dispatch({
+            t: 'addTag',
+            tag: {
+              label: 'tag',
+              start_ms: Math.min(startTime_ms, endTime_ms),
+              end_ms: Math.max(startTime_ms, endTime_ms),
+            }
+          });
+        }
+        setState(s => ({ ...s, pendingTag: undefined }));
+        tagDragRef.current = null;
+      } else {
+        if (dragRef.current !== null && !dragRef.current.didDrag && state.playback !== undefined) {
+          const isPaused = state.playback.pausedAt_ms !== undefined;
+          dispatch({ t: isPaused ? 'resume' : 'pause' });
+        }
+        dragRef.current = null;
       }
-      dragRef.current = null;
     }
   };
 

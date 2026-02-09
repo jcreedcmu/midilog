@@ -1,3 +1,9 @@
+export type Tag = {
+  label: string;
+  start_ms: number;
+  end_ms: number;
+};
+
 export type Song = {
   uuid?: string,
   start: string, // date
@@ -7,6 +13,7 @@ export type Song = {
 export type TimedSong = {
   start: string, // date
   events: TimedSongEvent[],
+  tags?: Tag[],
 };
 
 export type NoteEvent =
