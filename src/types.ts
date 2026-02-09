@@ -59,6 +59,7 @@ export type Action =
   | { t: 'setOutputMode', mode: OutputMode }
   | { t: 'addTag', tag: Tag }
   | { t: 'moveTag', index: number, tag: Tag }
+  | { t: 'renameTag', index: number, label: string }
   ;
 
 export type Dispatch = (action: Action) => void;
@@ -69,6 +70,13 @@ export type CanvasHandlers = {
   onPointerMove: (e: PointerEvent) => void;
   onPointerUp: (e: PointerEvent) => void;
   onWheel: (e: WheelEvent) => void;
+  onDoubleClick: (e: MouseEvent) => void;
+};
+
+export type EditingTag = {
+  index: number;
+  cssX: number;   // left position relative to canvas
+  cssW: number;    // width in css pixels
 };
 
 export function cx(...classes: (string | false | undefined)[]): string {

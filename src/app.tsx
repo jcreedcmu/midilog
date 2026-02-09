@@ -1,13 +1,13 @@
 import { createRoot } from 'react-dom/client';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Index, TimedSong, noteSong, timedSong, SongEvent, Tag } from './song';
 import { useCanvas } from './use-canvas';
 import { getText, unreachable } from './util';
 import { AudioOutput, OutputMode, send, allNotesOff, setMode } from './audio-output';
-import { renderMainCanvas, TAG_LANE_TOP, TAG_LANE_BOTTOM } from './render-canvas';
+import { renderMainCanvas, TAG_LANE_TOP, TAG_LANE_H, TAG_LANE_BOTTOM } from './render-canvas';
 import {
   AppState, AppProps, AppHandle, InitProps, Action, Dispatch, SongIx,
-  SidebarPanel, Playhead, Playback, CanvasHandlers,
+  SidebarPanel, Playhead, Playback, CanvasHandlers, EditingTag,
   cx, formatDuration, findEventIndexAtTime, scheduleNextCallback,
 } from './types';
 
@@ -144,6 +144,8 @@ function App(props: AppProps): JSX.Element {
     pixelPerMs: 1 / 10,
   });
   const [activePanel, setActivePanel] = useState<SidebarPanel | null>('files');
+  const [editingTag, setEditingTag] = useState<EditingTag | null>(null);
+  const editInputRef = useRef<HTMLInputElement | null>(null);
   const togglePanel = (panel: SidebarPanel) => {
     setActivePanel(prev => prev === panel ? null : panel);
   };
@@ -319,6 +321,13 @@ function App(props: AppProps): JSX.Element {
           return { ...s, song: { ...s.song, tags } };
         });
         break;
+      case 'renameTag':
+        setState(s => {
+          if (!s.song?.tags) return s;
+          const tags = s.song.tags.map((t, i) => i === action.index ? { ...t, label: action.label } : t);
+          return { ...s, song: { ...s.song, tags } };
+        });
+        break;
       default:
         unreachable(action);
     }
@@ -349,6 +358,14 @@ function App(props: AppProps): JSX.Element {
     const playHeadPosition_px = (state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms) * state.pixelPerMs;
     const xshift = cw / 2 - playHeadPosition_px;
     return (cssX - xshift) * msPerPixel;
+  }
+
+  function timeToCanvasX(time_ms: number): number {
+    if (!state.playback || !mc.current) return 0;
+    const cw = mc.current.size.x;
+    const playHeadPosition_px = (state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms) * state.pixelPerMs;
+    const xshift = cw / 2 - playHeadPosition_px;
+    return xshift + time_ms * state.pixelPerMs;
   }
 
   function findTagAtTime(time_ms: number): number {
@@ -449,8 +466,39 @@ function App(props: AppProps): JSX.Element {
         ...s,
         pixelPerMs: Math.min(1, Math.max(1 / 200, s.pixelPerMs * factor)),
       }));
+    },
+    onDoubleClick: (e: MouseEvent) => {
+      const rect = (e.target as Element).getBoundingClientRect();
+      const cssY = e.clientY - rect.top;
+      const cssX = e.clientX - rect.left;
+      if (cssY >= TAG_LANE_TOP && cssY < TAG_LANE_BOTTOM) {
+        const time_ms = canvasXToTime(cssX);
+        const hitIndex = findTagAtTime(time_ms);
+        if (hitIndex >= 0) {
+          const tag = state.song!.tags![hitIndex];
+          const tagCssX = timeToCanvasX(tag.start_ms);
+          const tagCssW = (tag.end_ms - tag.start_ms) * state.pixelPerMs;
+          setEditingTag({ index: hitIndex, cssX: tagCssX, cssW: tagCssW });
+          dispatch({ t: 'pause' });
+        }
+      }
     }
   };
+
+  useEffect(() => {
+    if (editingTag && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingTag]);
+
+  function commitTagEdit(value: string) {
+    if (editingTag === null) return;
+    if (value.length > 0) {
+      dispatch({ t: 'renameTag', index: editingTag.index, label: value });
+    }
+    setEditingTag(null);
+  }
 
   return (
     <div className="app-container">
@@ -487,7 +535,28 @@ function App(props: AppProps): JSX.Element {
           onPointerUp={canvasHandlers.onPointerUp}
           onPointerLeave={canvasHandlers.onPointerUp}
           onWheel={canvasHandlers.onWheel}
+          onDoubleClick={canvasHandlers.onDoubleClick}
         />
+
+        {editingTag && state.song?.tags?.[editingTag.index] && (
+          <input
+            ref={editInputRef}
+            className="tag-edit-input"
+            style={{
+              position: 'absolute',
+              left: editingTag.cssX,
+              top: TAG_LANE_TOP,
+              width: Math.max(60, editingTag.cssW),
+              height: TAG_LANE_H,
+            }}
+            defaultValue={state.song.tags[editingTag.index].label}
+            onBlur={e => commitTagEdit(e.currentTarget.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') commitTagEdit(e.currentTarget.value);
+              if (e.key === 'Escape') setEditingTag(null);
+            }}
+          />
+        )}
 
         <div className="sidebar-overlay">
           <div className="sidebar-icons">

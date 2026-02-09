@@ -163,9 +163,9 @@ export function renderMainCanvas(ci: CanvasInfo, state: AppState) {
       d.fill();
       d.clip();
       d.fillStyle = 'white';
-      d.fillText(tag.label, x + 25, TAG_LANE_TOP + TAG_LANE_H / 2);
       d.textAlign = 'left';
       d.textBaseline = 'middle';
+      d.fillText(tag.label, x + 6, TAG_LANE_TOP + TAG_LANE_H / 2);
       d.restore();
     });
 
