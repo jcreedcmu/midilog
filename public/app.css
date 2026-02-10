@@ -66,6 +66,11 @@ html, body {
   cursor: default;
 }
 
+.transport-btn.speed-active {
+  background: rgba(74, 158, 255, 0.4);
+  border-color: rgba(74, 158, 255, 0.6);
+}
+
 /* Main content */
 .main-content {
   position: relative;

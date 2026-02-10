@@ -28,7 +28,7 @@ export function renderMainCanvas(ci: CanvasInfo, state: AppState) {
 
   let playHeadPosition_px = 0;
   if (playback !== undefined) {
-    playHeadPosition_px = (playback.playhead.fastNowTime_ms - playback.startTime_ms) * pixel_of_ms;
+    playHeadPosition_px = (playback.playhead.fastNowTime_ms - playback.startTime_ms) * state.speed * pixel_of_ms;
   }
 
   let xshift = 0;
@@ -43,7 +43,7 @@ export function renderMainCanvas(ci: CanvasInfo, state: AppState) {
   d.font = `bold ${fontHeight}px 'Roboto Condensed', sans-serif`;
   d.textBaseline = 'middle';
   d.textAlign = 'right';
-  const currentTime_ms = playback ? playback.playhead.fastNowTime_ms - playback.startTime_ms : 0;
+  const currentTime_ms = playback ? (playback.playhead.fastNowTime_ms - playback.startTime_ms) * state.speed : 0;
 
   // draw octave lines
   for (let i = 0; i < 8; i++) {

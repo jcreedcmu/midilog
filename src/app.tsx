@@ -164,6 +164,7 @@ function App(props: AppProps): JSX.Element {
     pendingEvents: [],
     pendingTag: undefined,
     pixelPerMs: 1 / 10,
+    speed: 1,
   });
   const [activePanel, setActivePanel] = useState<SidebarPanel | null>('files');
   const [editingTag, setEditingTag] = useState<EditingTag | null>(null);
@@ -173,7 +174,7 @@ function App(props: AppProps): JSX.Element {
   };
   const [cref, mc] = useCanvas(
     state, renderMainCanvas,
-    [state.playback?.playhead.fastNowTime_ms, state.playback, state.song, state.song?.tags, state.pendingTag, state.pixelPerMs],
+    [state.playback?.playhead.fastNowTime_ms, state.playback, state.song, state.song?.tags, state.pendingTag, state.pixelPerMs, state.speed],
     () => { }
   );
 
@@ -233,7 +234,7 @@ function App(props: AppProps): JSX.Element {
           if (s.playback.pausedAt_ms !== undefined)
             return s; // Don't play notes if paused
           const { song, playback } = s;
-          send(output, action.message, s.playback.startTime_ms + action.atTime_ms);
+          send(output, action.message, s.playback.startTime_ms + action.atTime_ms / s.speed);
           if (action.newIx !== undefined) {
             playback.playhead.eventIndex = action.newIx;
             s = scheduleNextCallback(s, dispatch);
@@ -286,7 +287,7 @@ function App(props: AppProps): JSX.Element {
           if (s.playback === undefined || s.song === undefined || s.playback.pausedAt_ms === undefined)
             return s; // Only allow seeking when paused
           const { playback, song } = s;
-          const currentPosition = playback.playhead.fastNowTime_ms - playback.startTime_ms;
+          const currentPosition = (playback.playhead.fastNowTime_ms - playback.startTime_ms) * s.speed;
           const songDuration = song.events[song.events.length - 1].time_ms;
           const newPosition = Math.max(0, Math.min(songDuration, currentPosition + action.delta_ms));
           const actualDelta = newPosition - currentPosition;
@@ -295,7 +296,7 @@ function App(props: AppProps): JSX.Element {
             ...s,
             playback: {
               ...playback,
-              startTime_ms: playback.startTime_ms - actualDelta,
+              startTime_ms: playback.startTime_ms - actualDelta / s.speed,
               playhead: {
                 ...playback.playhead,
                 eventIndex: newEventIndex
@@ -332,7 +333,7 @@ function App(props: AppProps): JSX.Element {
             ...s,
             playback: {
               ...s.playback,
-              startTime_ms: now - songDuration,
+              startTime_ms: now - songDuration / s.speed,
               pausedAt_ms: now,
               playhead: {
                 eventIndex: s.song.events.length - 1,
@@ -420,7 +421,7 @@ function App(props: AppProps): JSX.Element {
             ...s,
             playback: {
               ...s.playback,
-              startTime_ms: now - action.time_ms,
+              startTime_ms: now - action.time_ms / s.speed,
               pausedAt_ms: now,
               playhead: { eventIndex, nowTime_ms: now, fastNowTime_ms: now }
             }
@@ -474,7 +475,7 @@ function App(props: AppProps): JSX.Element {
   function canvasXToTime(cssX: number): number {
     if (!state.playback || !mc.current) return 0;
     const cw = mc.current.size.x;
-    const playHeadPosition_px = (state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms) * state.pixelPerMs;
+    const playHeadPosition_px = (state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms) * state.speed * state.pixelPerMs;
     const xshift = cw / 2 - playHeadPosition_px;
     return (cssX - xshift) * msPerPixel;
   }
@@ -482,7 +483,7 @@ function App(props: AppProps): JSX.Element {
   function timeToCanvasX(time_ms: number): number {
     if (!state.playback || !mc.current) return 0;
     const cw = mc.current.size.x;
-    const playHeadPosition_px = (state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms) * state.pixelPerMs;
+    const playHeadPosition_px = (state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms) * state.speed * state.pixelPerMs;
     const xshift = cw / 2 - playHeadPosition_px;
     return xshift + time_ms * state.pixelPerMs;
   }
@@ -533,8 +534,8 @@ function App(props: AppProps): JSX.Element {
             ...s,
             pendingTag: {
               label: 'tag',
-              start_ms: Math.max(0, Math.min(td.startTime_ms, time_ms)),
-              end_ms: Math.min(songEnd, Math.max(td.startTime_ms, time_ms)),
+              start_ms: Math.max(0, Math.min(songEnd, Math.min(td.startTime_ms, time_ms))),
+              end_ms: Math.max(0, Math.min(songEnd, Math.max(td.startTime_ms, time_ms))),
             }
           }));
         } else if (td.mode === 'move') {
@@ -657,8 +658,21 @@ function App(props: AppProps): JSX.Element {
           <button className="transport-btn" onClick={handleGlobalSave} disabled={!isDirty}>
             <img src="/icons/save.svg" width={18} height={18} />
           </button>
+          <button className={cx('transport-btn', state.speed !== 1 && 'speed-active')} onClick={() => {
+            setState(s => {
+              const newSpeed = s.speed === 1 ? 2 : 1;
+              if (s.playback) {
+                const now = window.performance.now();
+                const songPos = (now - s.playback.startTime_ms) * s.speed;
+                return { ...s, speed: newSpeed, playback: { ...s.playback, startTime_ms: now - songPos / newSpeed } };
+              }
+              return { ...s, speed: newSpeed };
+            });
+          }}>
+            {state.speed === 1 ? '2x' : '1x'}
+          </button>
           {state.playback && state.song && (
-            formatDuration(state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms)
+            formatDuration((state.playback.playhead.fastNowTime_ms - state.playback.startTime_ms) * state.speed)
             + '/' +
             formatDuration(state.song.events[state.song.events.length - 1].time_ms)
           )}

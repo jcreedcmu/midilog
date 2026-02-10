@@ -42,6 +42,7 @@ export type AppState = {
   pendingEvents: SongEvent[],
   pendingTag: Tag | undefined,
   pixelPerMs: number,
+  speed: number,
 };
 
 export type SidebarPanel = 'files' | 'recording' | 'settings' | 'tags';
@@ -119,7 +120,7 @@ export function scheduleNextCallback(s: AppState, dispatch: Dispatch): AppState 
   const newIx = playback.playhead.eventIndex;
 
   const delay = Math.max(0,
-    playback.startTime_ms + song.events[newIx].time_ms - window.performance.now() - PLAYBACK_ANTICIPATION_MS);
+    playback.startTime_ms + song.events[newIx].time_ms / s.speed - window.performance.now() - PLAYBACK_ANTICIPATION_MS);
 
   if (delay > PLAYBACK_ANTICIPATION_MS) {
     requestAnimationFrame(() => dispatch({ t: 'idle' }));
