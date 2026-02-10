@@ -44,7 +44,7 @@ export type AppState = {
   pixelPerMs: number,
 };
 
-export type SidebarPanel = 'files' | 'recording' | 'settings';
+export type SidebarPanel = 'files' | 'recording' | 'settings' | 'tags';
 
 export type Action =
   | { t: 'none' }
@@ -62,6 +62,8 @@ export type Action =
   | { t: 'addTag', tag: Tag }
   | { t: 'moveTag', index: number, tag: Tag }
   | { t: 'renameTag', index: number, label: string }
+  | { t: 'removeTag', index: number }
+  | { t: 'seekToTime', time_ms: number }
   ;
 
 export type Dispatch = (action: Action) => void;

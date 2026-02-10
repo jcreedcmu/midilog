@@ -126,6 +126,32 @@ function SettingsPanel({ outputMode, hasMidi, dispatch }: { outputMode: OutputMo
   );
 }
 
+// Tags panel
+function TagsPanel({ tags, dispatch }: { tags: Tag[] | undefined, dispatch: Dispatch }) {
+  if (!tags || tags.length === 0) {
+    return (
+      <div className="panel-content">
+        <h3 className="panel-header">Tags</h3>
+        <div className="tag-hint">No tags on this song</div>
+      </div>
+    );
+  }
+  return (
+    <div className="panel-content">
+      <h3 className="panel-header">Tags</h3>
+      <ul className="tag-list">
+        {tags.map((tag, i) => (
+          <li key={i} className="tag-item">
+            <span className="tag-label tag-clickable" onClick={() => dispatch({ t: 'seekToTime', time_ms: tag.start_ms })}>{tag.label}</span>
+            <span className="tag-range">{formatDuration(tag.start_ms)}&ndash;{formatDuration(tag.end_ms)}</span>
+            <button className="tag-remove" onClick={() => dispatch({ t: 'removeTag', index: i })}>&#215;</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function App(props: AppProps): JSX.Element {
   const { songs: initialSongs, output, onSave, dispatchRef } = props;
   const [state, setState] = useState<AppState>({
@@ -366,6 +392,38 @@ function App(props: AppProps): JSX.Element {
             song: { ...s.song, tags },
             rawSong,
             songs: s.songs.map(e => e.file === file && e.ix === ix ? { ...e, song: rawSong, dirty: true } : e),
+          };
+        });
+        break;
+      case 'removeTag':
+        setState(s => {
+          if (!s.song?.tags || !s.rawSong || !s.songIx) return s;
+          const tags = s.song.tags.filter((_, i) => i !== action.index);
+          const rawSong = { ...s.rawSong, tags };
+          const { file, ix } = s.songIx;
+          return {
+            ...s,
+            song: { ...s.song, tags },
+            rawSong,
+            songs: s.songs.map(e => e.file === file && e.ix === ix ? { ...e, song: rawSong, dirty: true } : e),
+          };
+        });
+        break;
+      case 'seekToTime':
+        setState(s => {
+          if (s.playback === undefined || s.song === undefined)
+            return s;
+          allNotesOff(output);
+          const now = window.performance.now();
+          const eventIndex = findEventIndexAtTime(s.song, action.time_ms);
+          return {
+            ...s,
+            playback: {
+              ...s.playback,
+              startTime_ms: now - action.time_ms,
+              pausedAt_ms: now,
+              playhead: { eventIndex, nowTime_ms: now, fastNowTime_ms: now }
+            }
           };
         });
         break;
@@ -667,6 +725,11 @@ function App(props: AppProps): JSX.Element {
               active={activePanel === 'settings'}
               onClick={() => togglePanel('settings')}
             />
+            <SidebarButton
+              icon={<Icon src="/icons/tag.svg" active={activePanel === 'tags'} />}
+              active={activePanel === 'tags'}
+              onClick={() => togglePanel('tags')}
+            />
           </div>
 
           {activePanel !== null && (
@@ -679,6 +742,9 @@ function App(props: AppProps): JSX.Element {
               )}
               {activePanel === 'settings' && (
                 <SettingsPanel outputMode={output.mode} hasMidi={output.midiOutput !== null} dispatch={dispatch} />
+              )}
+              {activePanel === 'tags' && (
+                <TagsPanel tags={state.song?.tags} dispatch={dispatch} />
               )}
             </div>
           )}
