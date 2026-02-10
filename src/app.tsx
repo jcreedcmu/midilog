@@ -527,24 +527,25 @@ function App(props: AppProps): JSX.Element {
         const cssX = e.clientX - rect.left;
         const time_ms = canvasXToTime(cssX);
         const td = tagDragRef.current;
+        const songEnd = state.song ? state.song.events[state.song.events.length - 1].time_ms : Infinity;
         if (td.mode === 'create') {
           setState(s => ({
             ...s,
             pendingTag: {
               label: 'tag',
-              start_ms: Math.min(td.startTime_ms, time_ms),
-              end_ms: Math.max(td.startTime_ms, time_ms),
+              start_ms: Math.max(0, Math.min(td.startTime_ms, time_ms)),
+              end_ms: Math.min(songEnd, Math.max(td.startTime_ms, time_ms)),
             }
           }));
         } else if (td.mode === 'move') {
           const dur = td.tag.end_ms - td.tag.start_ms;
-          const newStart = time_ms - td.grabOffset_ms;
+          const clampedStart = Math.max(0, Math.min(songEnd - dur, time_ms - td.grabOffset_ms));
           dispatch({
             t: 'moveTag', index: td.index,
-            tag: { ...td.tag, start_ms: newStart, end_ms: newStart + dur },
+            tag: { ...td.tag, start_ms: clampedStart, end_ms: clampedStart + dur },
           });
         } else if (td.mode === 'resize') {
-          const newEnd = Math.max(td.tag.start_ms + 100, time_ms);
+          const newEnd = Math.max(td.tag.start_ms + 100, Math.min(songEnd, time_ms));
           dispatch({
             t: 'moveTag', index: td.index,
             tag: { ...td.tag, end_ms: newEnd },
