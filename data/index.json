@@ -5,7 +5,14 @@
   "start": "2017-12-17T00:08:13.558Z",
   "duration_ms": 59051.16,
   "hash": "b0a5cc6dd6c2b065",
-  "uuid": "423ddde8-af82-402f-b288-11f5feb76c1f"
+  "uuid": "423ddde8-af82-402f-b288-11f5feb76c1f",
+  "tags": [
+   {
+    "label": "relmasxna i ara",
+    "start_ms": -1100,
+    "end_ms": 57100
+   }
+  ]
  },
  {
   "date": "2017-12-16",
@@ -13,7 +20,14 @@
   "start": "2017-12-17T00:10:12.590Z",
   "duration_ms": 120456.754,
   "hash": "7426b464c2c96a18",
-  "uuid": "29d9eb91-613d-4fc2-8d96-6aab485ad213"
+  "uuid": "29d9eb91-613d-4fc2-8d96-6aab485ad213",
+  "tags": [
+   {
+    "label": "himenepit",
+    "start_ms": 15375.428734622217,
+    "end_ms": 117252.00000000001
+   }
+  ]
  },
  {
   "date": "2017-12-16",
@@ -21,7 +35,14 @@
   "start": "2017-12-17T00:32:35.110Z",
   "duration_ms": 155394.433,
   "hash": "f5c40e1c4665d98e",
-  "uuid": "e48e381e-cf70-490e-b76e-af2b8a5578de"
+  "uuid": "e48e381e-cf70-490e-b76e-af2b8a5578de",
+  "tags": [
+   {
+    "label": "blue bossa",
+    "start_ms": 47755.98429950052,
+    "end_ms": 155612.7256315115
+   }
+  ]
  },
  {
   "date": "2017-12-17",
