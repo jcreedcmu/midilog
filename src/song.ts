@@ -102,6 +102,16 @@ export function noteSong(timedSong: TimedSong): NoteSong {
         console.log(`unknown midi event ${event.message.join(", ")}`);
     }
   });
+  // Close unterminated notes/pedals at end of song
+  const endTime_ms = timedSong.events.length > 0 ? timedSong.events[timedSong.events.length - 1].time_ms : 0;
+  for (const note of Object.values(pitchNotes)) {
+    note.dur_ms = endTime_ms - note.time_ms;
+    events.push(note);
+  }
+  for (const pedal of Object.values(pedals)) {
+    pedal.dur_ms = endTime_ms - pedal.time_ms;
+    events.push(pedal);
+  }
   return { start: timedSong.start, events };
 }
 
