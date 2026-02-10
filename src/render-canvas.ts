@@ -177,6 +177,23 @@ export function renderMainCanvas(ci: CanvasInfo, state: AppState) {
     }
   }
 
+  // Song boundary dashed lines
+  if (state.song && state.song.events.length > 0) {
+    const songEnd_ms = state.song.events[state.song.events.length - 1].time_ms;
+    d.save();
+    d.setLineDash([6, 4]);
+    d.strokeStyle = '#889';
+    d.lineWidth = 1;
+    for (const t of [0, songEnd_ms]) {
+      const x = Math.round(xshift + t * pixel_of_ms) + 0.5;
+      d.beginPath();
+      d.moveTo(x, 0);
+      d.lineTo(x, ch);
+      d.stroke();
+    }
+    d.restore();
+  }
+
   if (playback !== undefined) {
     d.fillStyle = 'black';
     d.fillRect(xshift + playHeadPosition_px, 0, 2, ch);
