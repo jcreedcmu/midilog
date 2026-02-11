@@ -931,5 +931,28 @@
   "duration_ms": 3301,
   "hash": "7a907ca997cb5596",
   "uuid": "53ef9b51-d080-4d83-af19-5f2909d1482e"
+ },
+ {
+  "date": "2026-02-10",
+  "ix": 0,
+  "start": "2026-02-10T18:45:42.203Z",
+  "duration_ms": 111715,
+  "hash": "5654a40e0bd69138",
+  "uuid": "bf9065e7-2e9a-4f5d-bcce-bef1eafc0b2c"
+ },
+ {
+  "date": "2026-02-11",
+  "ix": 0,
+  "start": "2026-02-11T23:41:48.082Z",
+  "duration_ms": 110624,
+  "hash": "1938604554a081f5",
+  "uuid": "75dde498-08fc-4a49-8b42-f8192d88b7e7",
+  "tags": [
+   {
+    "label": "just the two of us",
+    "start_ms": 30099.489351257776,
+    "end_ms": 110624
+   }
+  ]
  }
 ]
