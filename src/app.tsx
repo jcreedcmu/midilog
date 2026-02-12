@@ -736,11 +736,11 @@ function App(props: AppProps): JSX.Element {
               active={activePanel === 'recording'}
               onClick={() => togglePanel('recording')}
             />}
-            <SidebarButton
+            {!READONLY && <SidebarButton
               icon={<Icon src="icons/piano.svg" active={activePanel === 'settings'} />}
               active={activePanel === 'settings'}
               onClick={() => togglePanel('settings')}
-            />
+            />}
             <SidebarButton
               icon={<Icon src="icons/tag.svg" active={activePanel === 'tags'} />}
               active={activePanel === 'tags'}
