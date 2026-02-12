@@ -20,6 +20,7 @@ async function go() {
     ...common,
     entryPoints: ['./src/logger.ts'],
     outfile: './out/logger.js',
+    define: { READONLY: 'false' },
   };
 
   if (args[0] == 'watch') {

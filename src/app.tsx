@@ -144,7 +144,7 @@ function TagsPanel({ tags, dispatch }: { tags: Tag[] | undefined, dispatch: Disp
           <li key={i} className="tag-item">
             <span className="tag-label tag-clickable" onClick={() => dispatch({ t: 'seekToTime', time_ms: tag.start_ms })}>{tag.label}</span>
             <span className="tag-range">{formatDuration(tag.start_ms)}&ndash;{formatDuration(tag.end_ms)}</span>
-            <button className="tag-remove" onClick={() => dispatch({ t: 'removeTag', index: i })}>&#215;</button>
+            {!READONLY && <button className="tag-remove" onClick={() => dispatch({ t: 'removeTag', index: i })}>&#215;</button>}
           </li>
         ))}
       </ul>
@@ -187,7 +187,7 @@ function App(props: AppProps): JSX.Element {
 
     // Always fetch the file so it's available (may already be cached in entry.song)
     if (!fetchedSongsRef.current.has(file)) {
-      fetchedSongsRef.current.set(file, JSON.parse(await getText(`/log/${file}`)));
+      fetchedSongsRef.current.set(file, JSON.parse(await getText(`log/${file}`)));
     }
     const fileSongs = fetchedSongsRef.current.get(file)!;
 
@@ -504,7 +504,7 @@ function App(props: AppProps): JSX.Element {
       const cssY = e.clientY - rect.top;
       const cssX = e.clientX - rect.left;
 
-      if (cssY >= TAG_LANE_TOP && cssY < TAG_LANE_BOTTOM && state.playback) {
+      if (!READONLY && cssY >= TAG_LANE_TOP && cssY < TAG_LANE_BOTTOM && state.playback) {
         const time_ms = canvasXToTime(cssX);
         const hitIndex = findTagAtTime(time_ms);
         if (hitIndex >= 0) {
@@ -600,6 +600,7 @@ function App(props: AppProps): JSX.Element {
       }));
     },
     onDoubleClick: (e: MouseEvent) => {
+      if (READONLY) return;
       const rect = (e.target as Element).getBoundingClientRect();
       const cssY = e.clientY - rect.top;
       const cssX = e.clientX - rect.left;
@@ -655,9 +656,9 @@ function App(props: AppProps): JSX.Element {
         <span>midi notebook</span>
         {state.songIx && (state.songIx.file.replace(/\.json$/, '') + '/' + state.songIx.ix)}
         <div className="transport">
-          <button className="transport-btn" onClick={handleGlobalSave} disabled={!isDirty}>
-            <img src="/icons/save.svg" width={18} height={18} />
-          </button>
+          {!READONLY && <button className="transport-btn" onClick={handleGlobalSave} disabled={!isDirty}>
+            <img src="icons/save.svg" width={18} height={18} />
+          </button>}
           <button className={cx('transport-btn', state.speed !== 1 && 'speed-active')} onClick={() => {
             setState(s => {
               const newSpeed = s.speed === 1 ? 2 : 1;
@@ -677,16 +678,16 @@ function App(props: AppProps): JSX.Element {
             formatDuration(state.song.events[state.song.events.length - 1].time_ms)
           )}
           <button className="transport-btn" onClick={() => dispatch({ t: 'seekToStart' })} disabled={!state.playback}>
-            <img src="/icons/skip-back.svg" width={18} height={18} />
+            <img src="icons/skip-back.svg" width={18} height={18} />
           </button>
           <button className="transport-btn" onClick={() => {
             if (!state.playback) return;
             dispatch({ t: state.playback.pausedAt_ms !== undefined ? 'resume' : 'pause' });
           }} disabled={!state.playback}>
-            <img src={state.playback?.pausedAt_ms !== undefined ? '/icons/play.svg' : '/icons/pause.svg'} width={18} height={18} />
+            <img src={state.playback?.pausedAt_ms !== undefined ? 'icons/play.svg' : 'icons/pause.svg'} width={18} height={18} />
           </button>
           <button className="transport-btn" onClick={() => dispatch({ t: 'seekToEnd' })} disabled={!state.playback}>
-            <img src="/icons/skip-forward.svg" width={18} height={18} />
+            <img src="icons/skip-forward.svg" width={18} height={18} />
           </button>
         </div>
       </div>
@@ -726,22 +727,22 @@ function App(props: AppProps): JSX.Element {
         <div className="sidebar-overlay">
           <div className="sidebar-icons">
             <SidebarButton
-              icon={<Icon src="/icons/folder.svg" active={activePanel === 'files'} />}
+              icon={<Icon src="icons/folder.svg" active={activePanel === 'files'} />}
               active={activePanel === 'files'}
               onClick={() => togglePanel('files')}
             />
-            <SidebarButton
-              icon={<Icon src="/icons/record.svg" active={activePanel === 'recording'} />}
+            {!READONLY && <SidebarButton
+              icon={<Icon src="icons/record.svg" active={activePanel === 'recording'} />}
               active={activePanel === 'recording'}
               onClick={() => togglePanel('recording')}
-            />
+            />}
             <SidebarButton
-              icon={<Icon src="/icons/piano.svg" active={activePanel === 'settings'} />}
+              icon={<Icon src="icons/piano.svg" active={activePanel === 'settings'} />}
               active={activePanel === 'settings'}
               onClick={() => togglePanel('settings')}
             />
             <SidebarButton
-              icon={<Icon src="/icons/tag.svg" active={activePanel === 'tags'} />}
+              icon={<Icon src="icons/tag.svg" active={activePanel === 'tags'} />}
               active={activePanel === 'tags'}
               onClick={() => togglePanel('tags')}
             />

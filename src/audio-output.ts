@@ -30,7 +30,7 @@ async function initSynth(output: AudioOutput): Promise<void> {
 
   try {
     const context = new AudioContext();
-    await context.audioWorklet.addModule('/js/spessasynth_processor.min.js');
+    await context.audioWorklet.addModule('js/spessasynth_processor.min.js');
     const synth = new WorkletSynthesizer(context);
     const sfont = await (await fetch(output.soundfontUrl)).arrayBuffer();
     await synth.soundBankManager.addSoundBank(sfont, "main");
