@@ -42,8 +42,42 @@ async function go() {
       console.log(`success, midi output: ${midiOutput ? 'found' : 'not found'}`);
     }
 
-    const output = createAudioOutput(midiOutput, 'soundfont/gm-good.sf3');
-    const index: Index = JSON.parse(await getText('logIndex.json'));
+    const progressFill = document.querySelector('.loading-progress-fill') as HTMLElement | null;
+    const progressText = document.querySelector('.loading-text') as HTMLElement | null;
+
+    async function fetchSoundfont(): Promise<ArrayBuffer> {
+      const response = await fetch('soundfont/gm-good.sf3');
+      const contentLength = Number(response.headers.get('Content-Length'));
+      if (!contentLength || !response.body) {
+        return response.arrayBuffer();
+      }
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let received = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        const pct = Math.round(100 * received / contentLength);
+        if (progressFill) progressFill.style.width = pct + '%';
+        if (progressText) progressText.textContent = `loading soundfont... ${pct}%`;
+      }
+      const result = new Uint8Array(received);
+      let offset = 0;
+      for (const chunk of chunks) {
+        result.set(chunk, offset);
+        offset += chunk.length;
+      }
+      return result.buffer;
+    }
+
+    const [soundfontData, indexText] = await Promise.all([
+      fetchSoundfont(),
+      getText('logIndex.json'),
+    ]);
+    const output = createAudioOutput(midiOutput, 'soundfont/gm-good.sf3', soundfontData);
+    const index: Index = JSON.parse(indexText);
     const songs: SongEntry[] = [];
     for (const row of index) {
       for (let i = 0; i < row.lines; i++) {

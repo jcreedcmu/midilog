@@ -8,12 +8,14 @@ export type AudioOutput = {
   synth: WorkletSynthesizer | null;
   context: AudioContext | null;
   soundfontUrl: string | null;
+  soundfontData: ArrayBuffer | null;
   initPromise: Promise<void> | null;
 };
 
 export function createAudioOutput(
   midiOutput: WebMidi.MIDIOutput | null,
-  soundfontUrl?: string
+  soundfontUrl?: string,
+  soundfontData?: ArrayBuffer,
 ): AudioOutput {
   return {
     mode: 'software',
@@ -21,18 +23,19 @@ export function createAudioOutput(
     synth: null,
     context: null,
     soundfontUrl: soundfontUrl ?? null,
+    soundfontData: soundfontData ?? null,
     initPromise: null,
   };
 }
 
 async function initSynth(output: AudioOutput): Promise<void> {
-  if (output.synth || !output.soundfontUrl) return;
+  if (output.synth || (!output.soundfontUrl && !output.soundfontData)) return;
 
   try {
     const context = new AudioContext();
     await context.audioWorklet.addModule('js/spessasynth_processor.min.js');
     const synth = new WorkletSynthesizer(context);
-    const sfont = await (await fetch(output.soundfontUrl)).arrayBuffer();
+    const sfont = output.soundfontData ?? await (await fetch(output.soundfontUrl!)).arrayBuffer();
     await synth.soundBankManager.addSoundBank(sfont, "main");
     await synth.isReady;
 

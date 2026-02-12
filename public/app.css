@@ -328,6 +328,34 @@ html, body {
   z-index: 2;
 }
 
+/* Loading progress */
+.loading {
+  margin-top: 40vh;
+  text-align: center;
+  padding: 0 20%;
+}
+
+.loading-progress {
+  height: 8px;
+  background: #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0 auto 12px;
+}
+
+.loading-progress-fill {
+  height: 100%;
+  width: 0;
+  background: #4a9eff;
+  border-radius: 4px;
+  transition: width 0.1s;
+}
+
+.loading-text {
+  color: #888;
+  font-size: 14px;
+}
+
 /* Piano roll */
 .piano-roll-canvas {
   width: 100%;
