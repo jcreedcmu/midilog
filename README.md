@@ -37,20 +37,23 @@ Bakes all song data into `dist/`, disables recording/editing and midi
 functionality, uses software synth only. Deployable to any static
 host. A GitHub Actions workflow (`.github/workflows/static.yml`) automatically builds and deploys to Pages on push to `main`.
 
-## Architecture
+## Design Notes
 
-### Data Format
-MIDI events are stored as JSON lines in `log/YYYY-MM-DD.json`. Each line is a "chunk" (recording session):
-```json
-{"uuid": "...", "start": 1513467890123, "events": [{"message": [144,60,64], "delta": {"midi_us": 0, "wall_ms": 0}}, ...]}
-```
-- `start`: Milliseconds since epoch for the start of this recording
-- `uuid`: Unique identifier for the recording (optional, added to new recordings)
+### Data
+Recording data lives in `data/` with a content-addressed layout:
+
+- `data/index.json` — array of entry metadata:
+  ```json
+  {"date": "2017-12-16", "ix": 0, "start": "2017-12-17T00:08:13.558Z", "duration_ms": 59051.16, "hash": "b0a5cc6dd6c2b065", "uuid": "...", "tags": [...]}
+  ```
+- `data/log/<hash>.json` — event data (array of MIDI events), keyed by content hash
+
+Each event has:
 - `message`: Raw MIDI bytes (e.g., [144, pitch, velocity] for note-on)
 - `delta.midi_us`: Microseconds since previous event (MIDI timestamp)
 - `delta.wall_ms`: Milliseconds since previous event (wall clock)
 
-### App Structure
+### Files
 - `src/index.ts` - Express server, serves static files and `/api/save` endpoint
 - `src/logger.ts` - Browser entry point, handles MIDI input capture
 - `src/app.tsx` - React UI for playback with piano roll visualization
