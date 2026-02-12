@@ -10,12 +10,24 @@ An older Node.js CLI implementation exists in `old-commandline-tool/`.
 
 ## Commands
 
+### Development (full read/write mode)
+
 ```bash
 npm install
 node build.mjs               # Build once
 node build.mjs watch         # Watch mode (rebuilds on file changes)
 make serve                   # Run server (port 8000, or PORT env var)
 ```
+
+### Static readonly build (for GitHub Pages)
+
+```bash
+make static                  # Generates dist/ with all song data baked in
+```
+
+This builds the browser bundle with `READONLY=true`, which disables MIDI recording, tag editing, and saving. Song data from `data/` is pre-assembled into `dist/log/*.json`. The output in `dist/` can be served by any static file server or deployed to GitHub Pages.
+
+A GitHub Actions workflow (`.github/workflows/static.yml`) automatically builds and deploys to Pages on push to `main`.
 
 ## Architecture
 
