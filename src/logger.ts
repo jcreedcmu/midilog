@@ -59,7 +59,7 @@ async function go() {
         if (done) break;
         chunks.push(value);
         received += value.length;
-        const pct = Math.round(100 * received / contentLength);
+        const pct = Math.min(100, Math.round(100 * received / contentLength));
         if (progressFill) progressFill.style.width = pct + '%';
         if (progressText) progressText.textContent = `loading soundfont... ${pct}%`;
       }
