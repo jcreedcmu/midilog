@@ -4,9 +4,9 @@ import { AppState } from './types';
 
 // Pre-load images for canvas rendering
 const pedalMarkImg = new Image();
-pedalMarkImg.src = '/icons/pedal-mark.svg';
+pedalMarkImg.src = 'icons/pedal-mark.svg';
 const tagMarkImg = new Image();
-tagMarkImg.src = '/icons/tag.svg';
+tagMarkImg.src = 'icons/tag.svg';
 
 // Lane layout constants (in CSS pixels)
 export const PEDAL_LANE_TOP = 0;
