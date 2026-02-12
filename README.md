@@ -35,5 +35,26 @@ make static           # generates dist/
 
 Bakes all song data into `dist/`, disables recording/editing and midi
 functionality, uses software synth only. Deployable to any static
-host. A GitHub Actions workflow in `.github` auto-deploys to Pages on
-push to `main`.
+host. A GitHub Actions workflow (`.github/workflows/static.yml`) automatically builds and deploys to Pages on push to `main`.
+
+## Architecture
+
+### Data Format
+MIDI events are stored as JSON lines in `log/YYYY-MM-DD.json`. Each line is a "chunk" (recording session):
+```json
+{"uuid": "...", "start": 1513467890123, "events": [{"message": [144,60,64], "delta": {"midi_us": 0, "wall_ms": 0}}, ...]}
+```
+- `start`: Milliseconds since epoch for the start of this recording
+- `uuid`: Unique identifier for the recording (optional, added to new recordings)
+- `message`: Raw MIDI bytes (e.g., [144, pitch, velocity] for note-on)
+- `delta.midi_us`: Microseconds since previous event (MIDI timestamp)
+- `delta.wall_ms`: Milliseconds since previous event (wall clock)
+
+### App Structure
+- `src/index.ts` - Express server, serves static files and `/api/save` endpoint
+- `src/logger.ts` - Browser entry point, handles MIDI input capture
+- `src/app.tsx` - React UI for playback with piano roll visualization
+- `src/song.ts` - Song data types and conversion (delta-based → absolute time → note events)
+- `public/` - Static assets (HTML, CSS, icons)
+
+The build produces two bundles: `out/index.js` (server) and `out/logger.js` (browser).
