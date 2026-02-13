@@ -50,7 +50,14 @@
   "start": "2017-12-17T17:15:33.666Z",
   "duration_ms": 111494.951,
   "hash": "2d5059231a5add07",
-  "uuid": "0b5017ab-0099-416c-a55f-b76b5cd97d72"
+  "uuid": "0b5017ab-0099-416c-a55f-b76b5cd97d72",
+  "tags": [
+   {
+    "label": "blues",
+    "start_ms": 0,
+    "end_ms": 111494.95100000015
+   }
+  ]
  },
  {
   "date": "2017-12-17",
@@ -74,7 +81,14 @@
   "start": "2017-12-18T01:47:03.100Z",
   "duration_ms": 218752.837,
   "hash": "57f14bc12b09a423",
-  "uuid": "44045062-83f4-462d-a06b-154bfdf68c3b"
+  "uuid": "44045062-83f4-462d-a06b-154bfdf68c3b",
+  "tags": [
+   {
+    "label": "how rorm it would be",
+    "start_ms": 52576.97005394406,
+    "end_ms": 217461.7649472619
+   }
+  ]
  },
  {
   "date": "2017-12-18",
@@ -82,7 +96,14 @@
   "start": "2017-12-18T14:36:22.185Z",
   "duration_ms": 140440.58,
   "hash": "ffa8a6c0e3959c23",
-  "uuid": "76d7c0fa-cb96-41e4-bd21-af69729554a4"
+  "uuid": "76d7c0fa-cb96-41e4-bd21-af69729554a4",
+  "tags": [
+   {
+    "label": "untitled F-Am-F-C",
+    "start_ms": 35006.21859618731,
+    "end_ms": 139551.0814347448
+   }
+  ]
  },
  {
   "date": "2017-12-18",
