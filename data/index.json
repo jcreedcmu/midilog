@@ -111,7 +111,14 @@
   "start": "2017-12-18T19:45:05.860Z",
   "duration_ms": 83559.174,
   "hash": "29e22a3491e7fe8d",
-  "uuid": "e408f508-e947-4c5e-949f-8e626ca4fd63"
+  "uuid": "e408f508-e947-4c5e-949f-8e626ca4fd63",
+  "tags": [
+   {
+    "label": "Am circle of fifths",
+    "start_ms": 0,
+    "end_ms": 83559.17399999996
+   }
+  ]
  },
  {
   "date": "2017-12-18",
