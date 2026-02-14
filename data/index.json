@@ -65,7 +65,8 @@
   "start": "2017-12-17T20:36:16.807Z",
   "duration_ms": 810.125,
   "hash": "3c03802c25ca4285",
-  "uuid": "730e2a50-bba2-46b7-8ea3-4cd48b3129f3"
+  "uuid": "730e2a50-bba2-46b7-8ea3-4cd48b3129f3",
+  "deleted": true
  },
  {
   "date": "2017-12-17",
@@ -73,7 +74,8 @@
   "start": "2017-12-17T20:36:43.490Z",
   "duration_ms": 159.887,
   "hash": "bd1751ea24783373",
-  "uuid": "b76d4795-5ab0-473c-bfca-f8ed57f793f3"
+  "uuid": "b76d4795-5ab0-473c-bfca-f8ed57f793f3",
+  "deleted": true
  },
  {
   "date": "2017-12-17",
@@ -134,7 +136,8 @@
   "start": "2017-12-18T23:12:54.986Z",
   "duration_ms": 3.644,
   "hash": "cb8f4eefb664c9fc",
-  "uuid": "0eaca7d8-8e48-46e0-b4ec-3d367d3f431b"
+  "uuid": "0eaca7d8-8e48-46e0-b4ec-3d367d3f431b",
+  "deleted": true
  },
  {
   "date": "2017-12-18",
@@ -206,7 +209,8 @@
   "start": "2017-12-21T00:30:21.195Z",
   "duration_ms": 4130.621,
   "hash": "868ff114a775b170",
-  "uuid": "60e388f1-85a2-44e1-a64e-cd23b33dde69"
+  "uuid": "60e388f1-85a2-44e1-a64e-cd23b33dde69",
+  "deleted": true
  },
  {
   "date": "2017-12-20",
@@ -238,7 +242,8 @@
   "start": "2017-12-21T20:55:36.613Z",
   "duration_ms": 645.25,
   "hash": "df11dab4f537818b",
-  "uuid": "51115593-46df-43bb-afdf-db5a617db905"
+  "uuid": "51115593-46df-43bb-afdf-db5a617db905",
+  "deleted": true
  },
  {
   "date": "2017-12-21",
@@ -246,7 +251,8 @@
   "start": "2017-12-21T20:55:51.022Z",
   "duration_ms": 135.135,
   "hash": "689fca78ccf1f984",
-  "uuid": "6a2c7b02-e0c7-4bf6-960c-947b29035986"
+  "uuid": "6a2c7b02-e0c7-4bf6-960c-947b29035986",
+  "deleted": true
  },
  {
   "date": "2017-12-21",
@@ -254,7 +260,8 @@
   "start": "2017-12-21T21:00:13.808Z",
   "duration_ms": 5050.14,
   "hash": "b57046bb289a72dd",
-  "uuid": "173c7312-c858-49a3-8f26-b060928c3c23"
+  "uuid": "173c7312-c858-49a3-8f26-b060928c3c23",
+  "deleted": true
  },
  {
   "date": "2017-12-21",
@@ -262,7 +269,8 @@
   "start": "2017-12-21T21:00:42.262Z",
   "duration_ms": 121.02,
   "hash": "2dd90e04d58a3138",
-  "uuid": "b7f9d5ec-839b-404d-9e73-fe3e659e3daa"
+  "uuid": "b7f9d5ec-839b-404d-9e73-fe3e659e3daa",
+  "deleted": true
  },
  {
   "date": "2017-12-21",
@@ -326,7 +334,8 @@
   "start": "2017-12-22T14:10:15.751Z",
   "duration_ms": 5975.509,
   "hash": "b7f3c39065726351",
-  "uuid": "17621ac6-1777-42d8-85b1-2decb544fea1"
+  "uuid": "17621ac6-1777-42d8-85b1-2decb544fea1",
+  "deleted": true
  },
  {
   "date": "2017-12-22",
@@ -342,7 +351,8 @@
   "start": "2017-12-22T19:39:49.818Z",
   "duration_ms": 1560.495,
   "hash": "76314dbca54f1604",
-  "uuid": "90143316-f00a-4719-856b-2ba59523b724"
+  "uuid": "90143316-f00a-4719-856b-2ba59523b724",
+  "deleted": true
  },
  {
   "date": "2017-12-22",
@@ -350,7 +360,8 @@
   "start": "2017-12-22T19:40:25.273Z",
   "duration_ms": 294.851,
   "hash": "1afc3faa2cebe624",
-  "uuid": "f852b652-c56a-4541-8112-0c4b49c38a34"
+  "uuid": "f852b652-c56a-4541-8112-0c4b49c38a34",
+  "deleted": true
  },
  {
   "date": "2017-12-22",
@@ -358,7 +369,8 @@
   "start": "2017-12-22T21:24:32.449Z",
   "duration_ms": 620.258,
   "hash": "bb98a6d6a0f1b5fa",
-  "uuid": "9971c67f-d1f1-4878-847d-2e8c861f0142"
+  "uuid": "9971c67f-d1f1-4878-847d-2e8c861f0142",
+  "deleted": true
  },
  {
   "date": "2017-12-22",
@@ -366,7 +378,8 @@
   "start": "2017-12-22T21:25:00.719Z",
   "duration_ms": 114.884,
   "hash": "5a0b6c24ae386a0a",
-  "uuid": "4651cbf7-00a0-4ef2-a45a-a61b42c95de9"
+  "uuid": "4651cbf7-00a0-4ef2-a45a-a61b42c95de9",
+  "deleted": true
  },
  {
   "date": "2017-12-22",
@@ -374,7 +387,8 @@
   "start": "2017-12-22T21:25:20.190Z",
   "duration_ms": 2204.234,
   "hash": "54d7871030328622",
-  "uuid": "92d5229c-900e-4cc3-b394-707f12299865"
+  "uuid": "92d5229c-900e-4cc3-b394-707f12299865",
+  "deleted": true
  },
  {
   "date": "2017-12-22",
@@ -382,7 +396,8 @@
   "start": "2017-12-22T21:26:10.966Z",
   "duration_ms": 3054.161,
   "hash": "072f92a3170c5b25",
-  "uuid": "8f5c7a78-da47-480e-9873-7e62750053ab"
+  "uuid": "8f5c7a78-da47-480e-9873-7e62750053ab",
+  "deleted": true
  },
  {
   "date": "2017-12-22",
@@ -390,7 +405,8 @@
   "start": "2017-12-22T21:26:29.961Z",
   "duration_ms": 705.288,
   "hash": "8b2cfa216210caa9",
-  "uuid": "c202fe4e-7f88-4923-a762-22768e8cac04"
+  "uuid": "c202fe4e-7f88-4923-a762-22768e8cac04",
+  "deleted": true
  },
  {
   "date": "2017-12-22",
@@ -398,7 +414,8 @@
   "start": "2017-12-22T21:28:12.271Z",
   "duration_ms": 205.122,
   "hash": "13649f598d98c978",
-  "uuid": "069fb7c5-8965-4786-99be-97b50842a055"
+  "uuid": "069fb7c5-8965-4786-99be-97b50842a055",
+  "deleted": true
  },
  {
   "date": "2017-12-22",
@@ -430,7 +447,8 @@
   "start": "2017-12-22T23:14:05.035Z",
   "duration_ms": 554.17,
   "hash": "429eecfdbefd589e",
-  "uuid": "ea304e37-1f9f-41e1-b166-2482d9d729dd"
+  "uuid": "ea304e37-1f9f-41e1-b166-2482d9d729dd",
+  "deleted": true
  },
  {
   "date": "2017-12-22",
@@ -438,7 +456,8 @@
   "start": "2017-12-22T23:15:43.227Z",
   "duration_ms": 213.367,
   "hash": "cb7b80833299f0e8",
-  "uuid": "51e88564-cb03-42cf-92c7-dbba8a363c00"
+  "uuid": "51e88564-cb03-42cf-92c7-dbba8a363c00",
+  "deleted": true
  },
  {
   "date": "2017-12-23",
@@ -454,7 +473,8 @@
   "start": "2017-12-23T17:05:51.099Z",
   "duration_ms": 2574.383,
   "hash": "27a9c066899ed84e",
-  "uuid": "47ea6f2d-afd3-4a5b-8dd2-a9986571fc13"
+  "uuid": "47ea6f2d-afd3-4a5b-8dd2-a9986571fc13",
+  "deleted": true
  },
  {
   "date": "2017-12-23",
@@ -470,7 +490,8 @@
   "start": "2017-12-23T17:06:53.169Z",
   "duration_ms": 84.964,
   "hash": "5553403e9e801255",
-  "uuid": "dc7f5988-02ed-4b23-9398-21357168f676"
+  "uuid": "dc7f5988-02ed-4b23-9398-21357168f676",
+  "deleted": true
  },
  {
   "date": "2017-12-23",
@@ -502,7 +523,8 @@
   "start": "2017-12-24T20:07:08.367Z",
   "duration_ms": 825.313,
   "hash": "a2c4843d5f02e58b",
-  "uuid": "2e60a884-0400-4495-8deb-51d9467c8dcf"
+  "uuid": "2e60a884-0400-4495-8deb-51d9467c8dcf",
+  "deleted": true
  },
  {
   "date": "2017-12-24",
@@ -510,7 +532,8 @@
   "start": "2017-12-24T20:07:26.880Z",
   "duration_ms": 9376.679,
   "hash": "0bc6eb84ba2310b8",
-  "uuid": "95503fe0-b2da-411f-9dcc-de397bdbb306"
+  "uuid": "95503fe0-b2da-411f-9dcc-de397bdbb306",
+  "deleted": true
  },
  {
   "date": "2017-12-25",
@@ -542,7 +565,8 @@
   "start": "2017-12-26T21:59:53.284Z",
   "duration_ms": 1792.477,
   "hash": "fd087d56243ba318",
-  "uuid": "e1f31900-2025-4ce7-8272-71ce12da228e"
+  "uuid": "e1f31900-2025-4ce7-8272-71ce12da228e",
+  "deleted": true
  },
  {
   "date": "2017-12-26",
@@ -550,7 +574,8 @@
   "start": "2017-12-26T22:00:31.706Z",
   "duration_ms": 79.607,
   "hash": "6f57e7bd6e54e5a7",
-  "uuid": "1c99eeda-b4fa-40f7-b310-af1584c3e9ea"
+  "uuid": "1c99eeda-b4fa-40f7-b310-af1584c3e9ea",
+  "deleted": true
  },
  {
   "date": "2017-12-26",
@@ -566,7 +591,8 @@
   "start": "2017-12-27T00:16:19.066Z",
   "duration_ms": 606.647,
   "hash": "0a1568cb4d54aaeb",
-  "uuid": "e0fb90af-ece8-4bfa-b662-1cfdd571085b"
+  "uuid": "e0fb90af-ece8-4bfa-b662-1cfdd571085b",
+  "deleted": true
  },
  {
   "date": "2017-12-26",
@@ -590,7 +616,8 @@
   "start": "2017-12-29T16:23:21.910Z",
   "duration_ms": 2399.504,
   "hash": "baebf733e5376c99",
-  "uuid": "388fcfcd-e67a-429e-9581-36f43b925831"
+  "uuid": "388fcfcd-e67a-429e-9581-36f43b925831",
+  "deleted": true
  },
  {
   "date": "2017-12-29",
@@ -598,7 +625,8 @@
   "start": "2017-12-29T16:23:39.534Z",
   "duration_ms": 910.145,
   "hash": "f4e69d2cb0da2bcd",
-  "uuid": "452c09bc-cd70-406b-9c08-b68b691cb743"
+  "uuid": "452c09bc-cd70-406b-9c08-b68b691cb743",
+  "deleted": true
  },
  {
   "date": "2017-12-29",
@@ -606,7 +634,8 @@
   "start": "2017-12-29T16:23:57.003Z",
   "duration_ms": 77.219,
   "hash": "bef5d72a4dd1f1ee",
-  "uuid": "c11c6e40-ad53-4fa9-b181-7dbcee4fb100"
+  "uuid": "c11c6e40-ad53-4fa9-b181-7dbcee4fb100",
+  "deleted": true
  },
  {
   "date": "2017-12-29",
@@ -670,7 +699,8 @@
   "start": "2018-01-01T21:39:03.302Z",
   "duration_ms": 104.243,
   "hash": "81a2f2a416be90ca",
-  "uuid": "b1e3ef12-e8fb-411d-a8a5-fd7871301fd3"
+  "uuid": "b1e3ef12-e8fb-411d-a8a5-fd7871301fd3",
+  "deleted": true
  },
  {
   "date": "2018-01-01",
@@ -678,7 +708,8 @@
   "start": "2018-01-01T22:16:56.162Z",
   "duration_ms": 1804.369,
   "hash": "bcf7ce2e934d9c21",
-  "uuid": "f9a59740-c699-4566-89fd-209a42c3bcf2"
+  "uuid": "f9a59740-c699-4566-89fd-209a42c3bcf2",
+  "deleted": true
  },
  {
   "date": "2018-01-01",
@@ -710,7 +741,8 @@
   "start": "2018-01-02T20:24:48.575Z",
   "duration_ms": 70.872,
   "hash": "a010022354880d34",
-  "uuid": "5f26f1ec-b06c-450f-b9af-9f3fae3b25fa"
+  "uuid": "5f26f1ec-b06c-450f-b9af-9f3fae3b25fa",
+  "deleted": true
  },
  {
   "date": "2018-01-02",
@@ -726,7 +758,8 @@
   "start": "2021-09-06T18:07:28.426Z",
   "duration_ms": 19197.799,
   "hash": "183f433f3bf54177",
-  "uuid": "ca3a6cb9-5936-4f53-8c90-5c206a83b10e"
+  "uuid": "ca3a6cb9-5936-4f53-8c90-5c206a83b10e",
+  "deleted": true
  },
  {
   "date": "2021-09-06",
@@ -971,7 +1004,8 @@
   "start": 1768174892651,
   "duration_ms": 11302.624,
   "hash": "5df7a32b0034fc88",
-  "uuid": "9875f735-fb76-4ca7-a102-534ecc461e7a"
+  "uuid": "9875f735-fb76-4ca7-a102-534ecc461e7a",
+  "deleted": true
  },
  {
   "date": "2026-02-07",
@@ -979,7 +1013,8 @@
   "start": "2026-02-07T20:58:44.285Z",
   "duration_ms": 10044,
   "hash": "f8c90bf7b742e8f2",
-  "uuid": "db7b1ae4-7a99-41b3-a585-1ef0d83700ca"
+  "uuid": "db7b1ae4-7a99-41b3-a585-1ef0d83700ca",
+  "deleted": true
  },
  {
   "date": "2026-02-07",
@@ -987,7 +1022,8 @@
   "start": "2026-02-07T21:17:32.989Z",
   "duration_ms": 6290,
   "hash": "15811d2740b9f44b",
-  "uuid": "591fc721-f069-48b3-a828-c04b76f3ca5e"
+  "uuid": "591fc721-f069-48b3-a828-c04b76f3ca5e",
+  "deleted": true
  },
  {
   "date": "2026-02-07",
@@ -995,7 +1031,8 @@
   "start": "2026-02-07T22:01:57.268Z",
   "duration_ms": 22105,
   "hash": "da95eb5025a24335",
-  "uuid": "c65a5b3c-0092-4ff6-ba2c-869f28cd59e6"
+  "uuid": "c65a5b3c-0092-4ff6-ba2c-869f28cd59e6",
+  "deleted": true
  },
  {
   "date": "2026-02-07",
@@ -1003,7 +1040,8 @@
   "start": "2026-02-07T22:02:34.235Z",
   "duration_ms": 3301,
   "hash": "7a907ca997cb5596",
-  "uuid": "53ef9b51-d080-4d83-af19-5f2909d1482e"
+  "uuid": "53ef9b51-d080-4d83-af19-5f2909d1482e",
+  "deleted": true
  },
  {
   "date": "2026-02-10",
