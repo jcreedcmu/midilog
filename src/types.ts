@@ -119,16 +119,32 @@ export function scheduleNextCallback(s: AppState, dispatch: Dispatch): AppState 
   if (playback === undefined || song === undefined)
     return s;
 
+  const now = window.performance.now();
+  playback.playhead.fastNowTime_ms = now;
+
   const newIx = playback.playhead.eventIndex;
 
+  // Past last event — keep animating until playhead reaches song end, then pause
+  if (newIx >= song.events.length) {
+    const songEnd_ms = song.events[song.events.length - 1].time_ms;
+    const position_ms = (now - playback.startTime_ms) * s.speed;
+    if (position_ms >= songEnd_ms) {
+      const endWallTime = playback.startTime_ms + songEnd_ms / s.speed;
+      playback.pausedAt_ms = endWallTime;
+      playback.playhead.fastNowTime_ms = endWallTime;
+      return s;
+    }
+    requestAnimationFrame(() => dispatch({ t: 'idle' }));
+    return s;
+  }
+
   const delay = Math.max(0,
-    playback.startTime_ms + song.events[newIx].time_ms / s.speed - window.performance.now() - PLAYBACK_ANTICIPATION_MS);
+    playback.startTime_ms + song.events[newIx].time_ms / s.speed - now - PLAYBACK_ANTICIPATION_MS);
 
   if (delay > PLAYBACK_ANTICIPATION_MS) {
     requestAnimationFrame(() => dispatch({ t: 'idle' }));
   } else {
     requestAnimationFrame(() => dispatch(playNextNote(song, playback.playhead)));
   }
-  playback.playhead.fastNowTime_ms = window.performance.now();
   return s;
 }

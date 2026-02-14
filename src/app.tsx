@@ -255,6 +255,10 @@ function App(props: AppProps): JSX.Element {
           if (action.newIx !== undefined) {
             playback.playhead.eventIndex = action.newIx;
             s = scheduleNextCallback(s, dispatch);
+          } else {
+            // Last event played — keep animating until playhead reaches end
+            playback.playhead.eventIndex = song.events.length;
+            s = scheduleNextCallback(s, dispatch);
           }
           return { ...s };
         });

@@ -1,5 +1,4 @@
 [ ] split entry at point
-[ ] better behavior when we run off the end of a recording
 [ ] drag breaks if we leave the window
 [ ] spacebar to stop/start? but make sure it doesn't happen when we're focused on a text element
 [ ] clicking on the loaded song shouldn't reload
@@ -8,6 +7,7 @@
 [ ] sanitize data and compute durations in server load?
 [ ] undo stack
 
+[x] better behavior when we run off the end of a recording
 [x] delete entry
 [x] ability to add tags to time ranges
 [x] ability to visualize pedal
