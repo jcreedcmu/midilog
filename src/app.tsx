@@ -57,17 +57,19 @@ function FilesPanel({ songs, dispatch, currentSong }: { songs: SongEntry[], disp
       <div className="files-scroll">
         <table className="files-table">
           <thead>
-            <tr><th>date</th><th>#</th><th>dur</th></tr>
+            <tr><th className="th-tag"></th><th>date</th><th>#</th><th>dur</th></tr>
           </thead>
           <tbody>
-            {songs.map(({ file, ix, duration_ms, dirty }) => {
+            {songs.map(({ file, ix, duration_ms, dirty, song }) => {
               const isActive = currentSong && currentSong.file === file && currentSong.ix === ix;
+              const hasTags = song?.tags && song.tags.length > 0;
               return (
                 <tr
                   key={`${file}-${ix}`}
                   className={cx('files-row', isActive && 'active')}
                   onClick={() => dispatch({ t: 'playFile', file, ix })}
                 >
+                  <td className="td-tag">{hasTags && <img src="icons/tag.svg" width={12} height={12} />}</td>
                   <td>{file.replace(/\.json$/, '')}{dirty ? ' *' : ''}</td>
                   <td>{ix}</td>
                   <td>{formatDuration(duration_ms)}</td>

@@ -169,6 +169,12 @@ html, body {
   background-color: #f5f5f5;
 }
 
+.th-tag, .td-tag {
+  width: 16px;
+  padding: 4px 2px !important;
+  text-align: center;
+}
+
 .files-row {
   cursor: pointer;
 }
