@@ -1,4 +1,3 @@
-[x] delete entry
 [ ] split entry at point
 [ ] better behavior when we run off the end of a recording
 [ ] drag breaks if we leave the window
@@ -7,7 +6,9 @@
 [ ] overlapping tags? "tags" and "labels"?
 [~] tempo change/2x mode? (done but I want to revisit how it's done)
 [ ] sanitize data and compute durations in server load?
+[ ] undo stack
 
+[x] delete entry
 [x] ability to add tags to time ranges
 [x] ability to visualize pedal
 [x] zooming horizontally
