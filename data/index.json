@@ -894,7 +894,14 @@
   "start": 1700493842702,
   "duration_ms": 170020.119,
   "hash": "32eaa12ffc6e4b4f",
-  "uuid": "910e2114-09f5-4af6-9b6b-7547bc9dac2c"
+  "uuid": "910e2114-09f5-4af6-9b6b-7547bc9dac2c",
+  "tags": [
+   {
+    "label": "untitled moody piece",
+    "start_ms": 0,
+    "end_ms": 170020.1189999997
+   }
+  ]
  },
  {
   "date": "2023-11-20",
@@ -902,7 +909,14 @@
   "start": 1700494024287,
   "duration_ms": 59983.169,
   "hash": "f9cf4d95af891ef9",
-  "uuid": "d94dff72-839f-4c00-bee7-507493cfea48"
+  "uuid": "d94dff72-839f-4c00-bee7-507493cfea48",
+  "tags": [
+   {
+    "label": "giant steps",
+    "start_ms": 19195.846664988843,
+    "end_ms": 59983.16900000006
+   }
+  ]
  },
  {
   "date": "2023-11-21",
@@ -910,7 +924,19 @@
   "start": 1700580584311,
   "duration_ms": 322786.349,
   "hash": "6d749967c850d738",
-  "uuid": "48c97267-50d9-4bb1-b62f-9fc6f33d64fa"
+  "uuid": "48c97267-50d9-4bb1-b62f-9fc6f33d64fa",
+  "tags": [
+   {
+    "label": "blue bossa",
+    "start_ms": 141527.62492534542,
+    "end_ms": 148957.02873622804
+   },
+   {
+    "label": "blue bossa",
+    "start_ms": 162054.65073986715,
+    "end_ms": 322786.34900000086
+   }
+  ]
  },
  {
   "date": "2023-11-21",
@@ -918,7 +944,14 @@
   "start": 1700602586443,
   "duration_ms": 74770.787,
   "hash": "7597ffb0bf7c089c",
-  "uuid": "97e73d76-40b9-4d49-ad48-f9fcd390503f"
+  "uuid": "97e73d76-40b9-4d49-ad48-f9fcd390503f",
+  "tags": [
+   {
+    "label": "untitled Am-Dm-C-E7 variant",
+    "start_ms": 21635.19280858748,
+    "end_ms": 47092.196559477634
+   }
+  ]
  },
  {
   "date": "2026-01-11",
