@@ -14,10 +14,14 @@ export type Song = {
 export type SongEntry = {
   file: string;
   ix: number;
+  start: string;
   duration_ms: number;
+  hash: string;
+  uuid?: string;
   tags?: Tag[];      // from index; updated when song is loaded/edited
   song?: Song;       // undefined = not yet loaded from server
   dirty: boolean;
+  deleted?: boolean;
 };
 
 export type TimedSong = {
@@ -56,6 +60,7 @@ export type IndexEntry = {
   hash: string;
   uuid?: string;
   tags?: Tag[];
+  deleted?: boolean;
 };
 
 export type Index = IndexEntry[];

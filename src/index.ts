@@ -18,6 +18,7 @@ type IndexEntry = {
   hash: string;
   uuid?: string;
   tags?: { label: string; start_ms: number; end_ms: number }[];
+  deleted?: boolean;
 };
 
 function contentHash(data: string): string {
@@ -84,43 +85,33 @@ app.get('/logIndex.json', (req, res) => {
 
 app.use(express.static(path.resolve(__dirname, '../public')));
 
-app.post('/api/save', (req, res) => {
-  const { song, file, ix } = req.body;
-  const date = file.replace(/\.json$/, '');
-  const eventsJson = JSON.stringify(song.events);
+// Store note events, return hash
+app.post('/api/content', (req, res) => {
+  const { events } = req.body;
+  const eventsJson = JSON.stringify(events);
   const hash = contentHash(eventsJson);
   const contentPath = path.join(dataLogDir, hash + '.json');
-
-  // Write content file (skip if already exists — content-addressable)
   if (!fs.existsSync(contentPath)) {
     fs.mkdirSync(dataLogDir, { recursive: true });
     fs.writeFileSync(contentPath, eventsJson, 'utf8');
   }
+  res.json({ hash });
+});
 
-  const duration_ms = durationFromEvents(song.events);
+// Save index entry as-is
+app.post('/api/save', (req, res) => {
+  const entry: IndexEntry = req.body;
   const index = readIndex();
-
-  // Find existing entry or create new one
-  const existing = index.findIndex(e => e.date === date && e.ix === ix);
-  const entry: IndexEntry = {
-    date,
-    ix,
-    start: song.start,
-    duration_ms,
-    hash,
-  };
-  if (song.uuid) entry.uuid = song.uuid;
-  if (song.tags && song.tags.length > 0) entry.tags = song.tags;
-
+  const existing = index.findIndex(e => e.date === entry.date && e.ix === entry.ix);
   if (existing >= 0) {
     index[existing] = entry;
   } else {
     index.push(entry);
   }
-
   writeIndex(index);
   res.json({ ok: true });
 });
+
 
 const port = process.env.PORT ?? 8000;
 app.listen(port, () => {

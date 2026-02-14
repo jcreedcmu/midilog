@@ -65,6 +65,8 @@ export type Action =
   | { t: 'renameTag', index: number, label: string }
   | { t: 'removeTag', index: number }
   | { t: 'seekToTime', time_ms: number }
+  | { t: 'deleteEntry', file: string, ix: number }
+  | { t: 'undeleteEntry', file: string, ix: number }
   ;
 
 export type Dispatch = (action: Action) => void;

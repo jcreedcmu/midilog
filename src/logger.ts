@@ -78,10 +78,13 @@ async function go() {
     ]);
     const output = createAudioOutput(midiOutput, 'soundfont/gm-good.sf3', soundfontData);
     const index: Index = JSON.parse(indexText);
-    const songs: SongEntry[] = index.map(entry => ({
+    const songs: SongEntry[] = index.filter(entry => !entry.deleted).map(entry => ({
       file: entry.date + '.json',
       ix: entry.ix,
+      start: entry.start,
       duration_ms: entry.duration_ms,
+      hash: entry.hash,
+      uuid: entry.uuid,
       tags: entry.tags,
       dirty: false,
     })).reverse();

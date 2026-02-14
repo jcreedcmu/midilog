@@ -51,28 +51,43 @@ function SidebarButton({ icon, active, onClick }: { icon: React.ReactNode, activ
 
 // Files panel
 function FilesPanel({ songs, dispatch, currentSong }: { songs: SongEntry[], dispatch: Dispatch, currentSong: SongIx | undefined }) {
+  const [showDeleted, setShowDeleted] = useState(false);
+  const visibleSongs = showDeleted ? songs : songs.filter(e => !e.deleted);
   return (
     <div className="files-panel">
-      <h3 className="panel-header">Entries</h3>
+      <div className="panel-header-row">
+        <h3 className="panel-header">Entries</h3>
+        {!READONLY && (
+          <label className="show-deleted-toggle">
+            <input type="checkbox" checked={showDeleted} onChange={e => setShowDeleted(e.currentTarget.checked)} />
+            show deleted
+          </label>
+        )}
+      </div>
       <div className="files-scroll">
         <table className="files-table">
           <thead>
-            <tr><th className="th-tag"></th><th>date</th><th>#</th><th>dur</th></tr>
+            <tr><th className="th-tag"></th><th>date</th><th>#</th><th>dur</th>{!READONLY && <th className="th-del"></th>}</tr>
           </thead>
           <tbody>
-            {songs.map(({ file, ix, duration_ms, dirty, song, tags }) => {
+            {visibleSongs.map(({ file, ix, duration_ms, dirty, deleted, song, tags }) => {
               const isActive = currentSong && currentSong.file === file && currentSong.ix === ix;
               const hasTags = ((song?.tags ?? tags)?.length ?? 0) > 0;
               return (
                 <tr
                   key={`${file}-${ix}`}
-                  className={cx('files-row', isActive && 'active')}
+                  className={cx('files-row', isActive && 'active', deleted && 'deleted')}
                   onClick={() => dispatch({ t: 'playFile', file, ix })}
                 >
                   <td className="td-tag">{hasTags && <img src="icons/tag.svg" width={12} height={12} />}</td>
                   <td>{file.replace(/\.json$/, '')}{dirty ? ' *' : ''}</td>
                   <td>{ix}</td>
                   <td>{formatDuration(duration_ms)}</td>
+                  {!READONLY && <td className="td-del">
+                    {deleted
+                      ? <button className="files-undelete-btn" onClick={(e) => { e.stopPropagation(); dispatch({ t: 'undeleteEntry', file, ix }); }}>&#x21a9;</button>
+                      : <button className="files-delete-btn" onClick={(e) => { e.stopPropagation(); dispatch({ t: 'deleteEntry', file, ix }); }}>&times;</button>}
+                  </td>}
                 </tr>
               );
             })}
@@ -430,6 +445,31 @@ function App(props: AppProps): JSX.Element {
           };
         });
         break;
+      case 'deleteEntry':
+        setState(s => {
+          const isPlaying = s.songIx && s.songIx.file === action.file && s.songIx.ix === action.ix;
+          if (isPlaying) allNotesOff(output);
+          return {
+            ...s,
+            songs: s.songs.map(e =>
+              e.file === action.file && e.ix === action.ix
+                ? { ...e, deleted: true, dirty: true }
+                : e
+            ),
+            ...(isPlaying ? { playback: undefined, song: undefined, nSong: undefined, rawSong: undefined, songIx: undefined } : {}),
+          };
+        });
+        break;
+      case 'undeleteEntry':
+        setState(s => ({
+          ...s,
+          songs: s.songs.map(e =>
+            e.file === action.file && e.ix === action.ix
+              ? { ...e, deleted: false, dirty: true }
+              : e
+          ),
+        }));
+        break;
       default:
         unreachable(action);
     }
@@ -438,14 +478,12 @@ function App(props: AppProps): JSX.Element {
   // Expose dispatch to parent
   dispatchRef.current = dispatch;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const events = state.pendingEvents;
     if (events.length === 0) return;
-    const song: Song = {
-      uuid: crypto.randomUUID(),
-      start: new Date().toJSON(),
-      events,
-    };
+    const uuid = crypto.randomUUID();
+    const start = new Date().toJSON();
+    const song: Song = { uuid, start, events };
     // Compute duration from events
     let total_us = 0;
     for (const ev of events) {
@@ -454,9 +492,16 @@ function App(props: AppProps): JSX.Element {
     }
     const duration_ms = total_us / 1000;
     const file = new Date().toJSON().replace(/T.*/, '') + '.json';
+    // Store content and get hash
+    const resp = await fetch(new Request('/api/content', {
+      method: 'POST',
+      body: JSON.stringify({ events }),
+      headers: { 'Content-Type': 'application/json' },
+    }));
+    const { hash } = await resp.json();
     setState(s => {
       const ix = s.songs.filter(e => e.file === file).length;
-      const entry: SongEntry = { file, ix, duration_ms, song, dirty: true };
+      const entry: SongEntry = { file, ix, start, duration_ms, hash, uuid, song, dirty: true };
       return { ...s, songs: [...s.songs, entry], pendingEvents: [] };
     });
     onSave(); // just resets timing
@@ -638,11 +683,21 @@ function App(props: AppProps): JSX.Element {
   const isDirty = state.songs.some(e => e.dirty);
 
   const handleGlobalSave = async () => {
-    const dirtyEntries = state.songs.filter(e => e.dirty && e.song);
+    const dirtyEntries = state.songs.filter(e => e.dirty);
     for (const entry of dirtyEntries) {
+      const indexEntry: any = {
+        date: entry.file.replace(/\.json$/, ''),
+        ix: entry.ix,
+        start: entry.start,
+        duration_ms: entry.duration_ms,
+        hash: entry.hash,
+      };
+      if (entry.uuid) indexEntry.uuid = entry.uuid;
+      if ((entry.song?.tags ?? entry.tags)?.length) indexEntry.tags = entry.song?.tags ?? entry.tags;
+      if (entry.deleted) indexEntry.deleted = true;
       await fetch(new Request('/api/save', {
         method: 'POST',
-        body: JSON.stringify({ song: entry.song, file: entry.file, ix: entry.ix }),
+        body: JSON.stringify(indexEntry),
         headers: { 'Content-Type': 'application/json' },
       }));
     }

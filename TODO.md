@@ -1,10 +1,10 @@
-[ ] delete entry
+[x] delete entry
 [ ] split entry at point
 [ ] better behavior when we run off the end of a recording
 [ ] drag breaks if we leave the window
 [ ] spacebar to stop/start? but make sure it doesn't happen when we're focused on a text element
 [ ] clicking on the loaded song shouldn't reload
-[ ] overlapping tags?
+[ ] overlapping tags? "tags" and "labels"?
 [~] tempo change/2x mode? (done but I want to revisit how it's done)
 [ ] sanitize data and compute durations in server load?
 

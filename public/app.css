@@ -118,7 +118,7 @@ html, body {
 
 /* Sidebar panel */
 .sidebar-panel {
-  width: 250px;
+  width: 300px;
   background-color: #f5f5f5;
   border-right: 1px solid #ddd;
   flex-shrink: 0;
@@ -149,6 +149,7 @@ html, body {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  padding-right: 8px;
 }
 
 .files-table {
@@ -185,6 +186,75 @@ html, body {
 
 .files-row:hover {
   background-color: #e0e0e0;
+}
+
+.th-del, .td-del {
+  width: 20px;
+  padding: 0 !important;
+  text-align: center;
+}
+
+.files-delete-btn {
+  background: none;
+  border: none;
+  color: #c44;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.files-row:hover .files-delete-btn {
+  opacity: 1;
+}
+
+.files-delete-btn:hover {
+  color: #f00;
+}
+
+.files-row.deleted td {
+  color: #aaa;
+  text-decoration: line-through;
+}
+
+.files-undelete-btn {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.files-row:hover .files-undelete-btn {
+  opacity: 1;
+}
+
+.files-undelete-btn:hover {
+  color: #4a9eff;
+}
+
+.panel-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+
+.panel-header-row .panel-header {
+  margin-bottom: 0;
+}
+
+.show-deleted-toggle {
+  font-size: 11px;
+  color: #888;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .files-row.active {
