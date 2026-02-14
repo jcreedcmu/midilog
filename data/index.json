@@ -733,7 +733,29 @@
   "start": "2018-01-02T16:41:42.124Z",
   "duration_ms": 535260.219,
   "hash": "65bab5de799c464e",
-  "uuid": "c61b0e1e-4693-4544-a06f-82e3c4764a4c"
+  "uuid": "c61b0e1e-4693-4544-a06f-82e3c4764a4c",
+  "tags": [
+   {
+    "label": "mary jane's last dance",
+    "start_ms": 16189.279316390279,
+    "end_ms": 156433.95983723152
+   },
+   {
+    "label": "how rorm it would be",
+    "start_ms": 161145.9834756586,
+    "end_ms": 304576.4685947194
+   },
+   {
+    "label": "how rorm it would be (Eb)",
+    "start_ms": 304958.33766055707,
+    "end_ms": 432005.2664137094
+   },
+   {
+    "label": "take five",
+    "start_ms": 432208.738764799,
+    "end_ms": 535260.2190000007
+   }
+  ]
  },
  {
   "date": "2018-01-02",
