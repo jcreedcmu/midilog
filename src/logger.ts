@@ -84,7 +84,7 @@ async function go() {
       duration_ms: entry.duration_ms,
       tags: entry.tags,
       dirty: false,
-    }));
+    })).reverse();
 
     const onSave = () => { timing.isFirstEvent = true; };
 
