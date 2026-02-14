@@ -78,12 +78,13 @@ async function go() {
     ]);
     const output = createAudioOutput(midiOutput, 'soundfont/gm-good.sf3', soundfontData);
     const index: Index = JSON.parse(indexText);
-    const songs: SongEntry[] = [];
-    for (const row of index) {
-      for (let i = 0; i < row.lines; i++) {
-        songs.push({ file: row.file, ix: i, duration_ms: row.durations_ms[i], dirty: false });
-      }
-    }
+    const songs: SongEntry[] = index.map(entry => ({
+      file: entry.date + '.json',
+      ix: entry.ix,
+      duration_ms: entry.duration_ms,
+      tags: entry.tags,
+      dirty: false,
+    }));
 
     const onSave = () => { timing.isFirstEvent = true; };
 

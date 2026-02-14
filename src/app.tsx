@@ -60,9 +60,9 @@ function FilesPanel({ songs, dispatch, currentSong }: { songs: SongEntry[], disp
             <tr><th className="th-tag"></th><th>date</th><th>#</th><th>dur</th></tr>
           </thead>
           <tbody>
-            {songs.map(({ file, ix, duration_ms, dirty, song }) => {
+            {songs.map(({ file, ix, duration_ms, dirty, song, tags }) => {
               const isActive = currentSong && currentSong.file === file && currentSong.ix === ix;
-              const hasTags = song?.tags && song.tags.length > 0;
+              const hasTags = ((song?.tags ?? tags)?.length ?? 0) > 0;
               return (
                 <tr
                   key={`${file}-${ix}`}

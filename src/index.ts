@@ -79,22 +79,7 @@ app.get('/log/:file', (req, res) => {
 });
 
 app.get('/logIndex.json', (req, res) => {
-  const index = readIndex();
-  const groups = new Map<string, { durations_ms: number[] }>();
-  for (const entry of index) {
-    const file = entry.date + '.json';
-    let group = groups.get(file);
-    if (!group) {
-      group = { durations_ms: [] };
-      groups.set(file, group);
-    }
-    group.durations_ms.push(entry.duration_ms);
-  }
-  const metadata: { file: string, lines: number, durations_ms: number[] }[] = [];
-  for (const [file, group] of groups) {
-    metadata.push({ file, lines: group.durations_ms.length, durations_ms: group.durations_ms });
-  }
-  res.json(metadata);
+  res.json(readIndex());
 });
 
 app.use(express.static(path.resolve(__dirname, '../public')));

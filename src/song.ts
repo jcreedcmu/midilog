@@ -15,6 +15,7 @@ export type SongEntry = {
   file: string;
   ix: number;
   duration_ms: number;
+  tags?: Tag[];      // from index; updated when song is loaded/edited
   song?: Song;       // undefined = not yet loaded from server
   dirty: boolean;
 };
@@ -47,7 +48,17 @@ export type TimedSongEvent = {
   time_ms: number,
 }
 
-export type Index = { file: string, lines: number, durations_ms: number[] }[];
+export type IndexEntry = {
+  date: string;
+  ix: number;
+  start: string;
+  duration_ms: number;
+  hash: string;
+  uuid?: string;
+  tags?: Tag[];
+};
+
+export type Index = IndexEntry[];
 
 export function timedSong(song: Song): TimedSong {
   let time_ms: number = 0;
