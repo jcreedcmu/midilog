@@ -43,6 +43,7 @@ export type AppState = {
   pendingTag: Tag | undefined,
   pixelPerMs: number,
   speed: number,
+  autoSave: boolean,
 };
 
 export type SidebarPanel = 'files' | 'recording' | 'settings' | 'tags';
@@ -67,6 +68,7 @@ export type Action =
   | { t: 'seekToTime', time_ms: number }
   | { t: 'deleteEntry', file: string, ix: number }
   | { t: 'undeleteEntry', file: string, ix: number }
+  | { t: 'toggleAutoSave' }
   ;
 
 export type Dispatch = (action: Action) => void;

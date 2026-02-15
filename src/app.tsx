@@ -99,7 +99,7 @@ function FilesPanel({ songs, dispatch, currentSong }: { songs: SongEntry[], disp
 }
 
 // Recording panel
-function RecordingPanel({ pendingEvents, onSave, onDiscard }: { pendingEvents: SongEvent[], onSave: () => void, onDiscard: () => void }) {
+function RecordingPanel({ pendingEvents, onSave, onDiscard, autoSave, onToggleAutoSave }: { pendingEvents: SongEvent[], onSave: () => void, onDiscard: () => void, autoSave: boolean, onToggleAutoSave: () => void }) {
   return (
     <div className="panel-content">
       <h3 className="panel-header">Recording</h3>
@@ -114,6 +114,10 @@ function RecordingPanel({ pendingEvents, onSave, onDiscard }: { pendingEvents: S
           Discard
         </button>
       </div>
+      <label className="auto-save-toggle">
+        <input type="checkbox" checked={autoSave} onChange={onToggleAutoSave} />
+        auto-save after 10s
+      </label>
     </div>
   );
 }
@@ -182,6 +186,7 @@ function App(props: AppProps): JSX.Element {
     pendingTag: undefined,
     pixelPerMs: 1 / 10,
     speed: 1,
+    autoSave: false,
   });
   const [activePanel, setActivePanel] = useState<SidebarPanel | null>('files');
   const [editingTag, setEditingTag] = useState<EditingTag | null>(null);
@@ -474,6 +479,9 @@ function App(props: AppProps): JSX.Element {
           ),
         }));
         break;
+      case 'toggleAutoSave':
+        setState(s => ({ ...s, autoSave: !s.autoSave }));
+        break;
       default:
         unreachable(action);
     }
@@ -514,6 +522,12 @@ function App(props: AppProps): JSX.Element {
   const handleDiscard = () => {
     dispatch({ t: 'clearPendingEvents' });
   };
+
+  useEffect(() => {
+    if (!state.autoSave || state.pendingEvents.length === 0) return;
+    const id = setTimeout(() => { handleSave(); }, 10000);
+    return () => clearTimeout(id);
+  }, [state.pendingEvents.length, state.autoSave]);
 
   const dragRef = useRef<{ startX: number, didDrag: boolean } | null>(null);
   type TagDrag =
@@ -815,7 +829,7 @@ function App(props: AppProps): JSX.Element {
                 <FilesPanel songs={state.songs} dispatch={dispatch} currentSong={state.songIx} />
               )}
               {activePanel === 'recording' && (
-                <RecordingPanel pendingEvents={state.pendingEvents} onSave={handleSave} onDiscard={handleDiscard} />
+                <RecordingPanel pendingEvents={state.pendingEvents} onSave={handleSave} onDiscard={handleDiscard} autoSave={state.autoSave} onToggleAutoSave={() => dispatch({ t: 'toggleAutoSave' })} />
               )}
               {activePanel === 'settings' && (
                 <SettingsPanel outputMode={output.mode} hasMidi={output.midiOutput !== null} dispatch={dispatch} />
