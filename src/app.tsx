@@ -50,7 +50,7 @@ function SidebarButton({ icon, active, onClick }: { icon: React.ReactNode, activ
 }
 
 // Files panel
-function FilesPanel({ songs, dispatch, currentSong }: { songs: SongEntry[], dispatch: Dispatch, currentSong: SongIx | undefined }) {
+function FilesPanel({ songs, dispatch, currentSong, activeTags }: { songs: SongEntry[], dispatch: Dispatch, currentSong: SongIx | undefined, activeTags: Tag[] | undefined }) {
   const [showDeleted, setShowDeleted] = useState(false);
   const visibleSongs = showDeleted ? songs : songs.filter(e => !e.deleted);
   return (
@@ -73,7 +73,8 @@ function FilesPanel({ songs, dispatch, currentSong }: { songs: SongEntry[], disp
             {visibleSongs.map(({ file, ix, duration_ms, dirty, deleted, song, tags }) => {
               const isActive = currentSong && currentSong.file === file && currentSong.ix === ix;
               const hasTags = ((song?.tags ?? tags)?.length ?? 0) > 0;
-              return (
+              const songTags = isActive ? activeTags : (song?.tags ?? tags);
+              return (<>
                 <tr
                   key={`${file}-${ix}`}
                   className={cx('files-row', isActive && 'active', deleted && 'deleted')}
@@ -89,7 +90,18 @@ function FilesPanel({ songs, dispatch, currentSong }: { songs: SongEntry[], disp
                       : <button className="files-delete-btn" onClick={(e) => { e.stopPropagation(); dispatch({ t: 'deleteEntry', file, ix }); }}>&times;</button>}
                   </td>}
                 </tr>
-              );
+                {isActive && songTags && songTags.map((tag, i) => (
+                  <tr key={`${file}-${ix}-tag-${i}`} className="files-row" onClick={() => dispatch({ t: 'seekToTime', time_ms: tag.start_ms })}>
+                    <td className="td-tag"></td><td colSpan={3}>
+                      <span className="tag-label tag-clickable">{tag.label}</span>&nbsp;&nbsp;
+                      <span className="tag-range">{formatDuration(tag.start_ms)}&ndash;{formatDuration(tag.end_ms)}</span>
+                    </td>
+                    {!READONLY && <td className="td-del">
+                      <button className="tag-remove" onClick={(e) => { e.stopPropagation(); dispatch({ t: 'removeTag', index: i }); }}>&#215;</button>
+                    </td>}
+                  </tr>
+                ))}
+              </>);
             })}
           </tbody>
         </table>
@@ -147,31 +159,6 @@ function SettingsPanel({ outputMode, hasMidi, dispatch }: { outputMode: OutputMo
   );
 }
 
-// Tags panel
-function TagsPanel({ tags, dispatch }: { tags: Tag[] | undefined, dispatch: Dispatch }) {
-  if (!tags || tags.length === 0) {
-    return (
-      <div className="panel-content">
-        <h3 className="panel-header">Tags</h3>
-        <div className="tag-hint">No tags on this song</div>
-      </div>
-    );
-  }
-  return (
-    <div className="panel-content">
-      <h3 className="panel-header">Tags</h3>
-      <ul className="tag-list">
-        {tags.map((tag, i) => (
-          <li key={i} className="tag-item">
-            <span className="tag-label tag-clickable" onClick={() => dispatch({ t: 'seekToTime', time_ms: tag.start_ms })}>{tag.label}</span>
-            <span className="tag-range">{formatDuration(tag.start_ms)}&ndash;{formatDuration(tag.end_ms)}</span>
-            {!READONLY && <button className="tag-remove" onClick={() => dispatch({ t: 'removeTag', index: i })}>&#215;</button>}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 function App(props: AppProps): JSX.Element {
   const { songs: initialSongs, output, onSave, dispatchRef } = props;
@@ -836,26 +823,18 @@ function App(props: AppProps): JSX.Element {
               active={activePanel === 'settings'}
               onClick={() => togglePanel('settings')}
             />}
-            <SidebarButton
-              icon={<Icon src="icons/tag.svg" active={activePanel === 'tags'} />}
-              active={activePanel === 'tags'}
-              onClick={() => togglePanel('tags')}
-            />
           </div>
 
           {activePanel !== null && (
             <div className="sidebar-panel">
               {activePanel === 'files' && (
-                <FilesPanel songs={state.songs} dispatch={dispatch} currentSong={state.songIx} />
+                <FilesPanel songs={state.songs} dispatch={dispatch} currentSong={state.songIx} activeTags={state.song?.tags} />
               )}
               {activePanel === 'recording' && (
                 <RecordingPanel pendingEvents={state.pendingEvents} onSave={handleSave} onDiscard={handleDiscard} autoSave={state.autoSave} onToggleAutoSave={() => dispatch({ t: 'toggleAutoSave' })} />
               )}
               {activePanel === 'settings' && (
                 <SettingsPanel outputMode={output.mode} hasMidi={output.midiOutput !== null} dispatch={dispatch} />
-              )}
-              {activePanel === 'tags' && (
-                <TagsPanel tags={state.song?.tags} dispatch={dispatch} />
               )}
             </div>
           )}

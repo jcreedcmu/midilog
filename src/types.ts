@@ -46,7 +46,7 @@ export type AppState = {
   autoSave: boolean,
 };
 
-export type SidebarPanel = 'files' | 'recording' | 'settings' | 'tags';
+export type SidebarPanel = 'files' | 'recording' | 'settings';
 
 export type Action =
   | { t: 'none' }
