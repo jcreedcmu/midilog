@@ -944,7 +944,14 @@
   "start": 1700317845498,
   "duration_ms": 162572.298,
   "hash": "4eec7661c5b8cfb9",
-  "uuid": "832f5922-ed02-4885-a16f-0affcecca0ad"
+  "uuid": "832f5922-ed02-4885-a16f-0affcecca0ad",
+  "tags": [
+   {
+    "label": "nunca vas a comprender",
+    "start_ms": 33856.13156432878,
+    "end_ms": 162572.29800000004
+   }
+  ]
  },
  {
   "date": "2023-11-19",
