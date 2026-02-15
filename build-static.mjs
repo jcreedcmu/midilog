@@ -14,21 +14,7 @@ fs.mkdirSync(dist, { recursive: true });
 const index = JSON.parse(fs.readFileSync('./data/index.json', 'utf8'));
 
 // Generate logIndex.json (same format as server's /logIndex.json endpoint)
-const groups = new Map();
-for (const entry of index) {
-  const file = entry.date + '.json';
-  let group = groups.get(file);
-  if (!group) {
-    group = { durations_ms: [] };
-    groups.set(file, group);
-  }
-  group.durations_ms.push(entry.duration_ms);
-}
-const metadata = [];
-for (const [file, group] of groups) {
-  metadata.push({ file, lines: group.durations_ms.length, durations_ms: group.durations_ms });
-}
-fs.writeFileSync(path.join(dist, 'logIndex.json'), JSON.stringify(metadata));
+fs.writeFileSync(path.join(dist, 'logIndex.json'), JSON.stringify(index));
 
 // Generate log/*.json files (same format as server's /log/:file endpoint)
 fs.mkdirSync(path.join(dist, 'log'), { recursive: true });
