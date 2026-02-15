@@ -1,6 +1,6 @@
 import { init } from './app';
 import { createAudioOutput } from './audio-output';
-import { Index, SongEntry, SongEvent } from './song';
+import { Index, SongEntry, SongEvent, indexToSongEntries } from './song';
 import { getText } from './util';
 
 
@@ -78,17 +78,7 @@ async function go() {
     ]);
     const output = createAudioOutput(midiOutput, 'soundfont/gm-good.sf3', soundfontData);
     const index: Index = JSON.parse(indexText);
-    const songs: SongEntry[] = index.map(entry => ({
-      file: entry.date + '.json',
-      ix: entry.ix,
-      start: entry.start,
-      duration_ms: entry.duration_ms,
-      hash: entry.hash,
-      uuid: entry.uuid,
-      tags: entry.tags,
-      dirty: false,
-      deleted: entry.deleted,
-    })).reverse();
+    const songs = indexToSongEntries(index);
 
     const onSave = () => { timing.isFirstEvent = true; };
 

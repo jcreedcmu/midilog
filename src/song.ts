@@ -65,6 +65,20 @@ export type IndexEntry = {
 
 export type Index = IndexEntry[];
 
+export function indexToSongEntries(index: Index): SongEntry[] {
+  return index.map(entry => ({
+    file: entry.date + '.json',
+    ix: entry.ix,
+    start: entry.start,
+    duration_ms: entry.duration_ms,
+    hash: entry.hash,
+    uuid: entry.uuid,
+    tags: entry.tags,
+    dirty: false,
+    deleted: entry.deleted,
+  })).reverse();
+}
+
 export function timedSong(song: Song): TimedSong {
   let time_ms: number = 0;
   const events: TimedSongEvent[] = song.events.map(event => {

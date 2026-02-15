@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import { useRef, useState, useEffect } from 'react';
-import { Song, SongEntry, noteSong, timedSong, SongEvent, Tag } from './song';
+import { Song, SongEntry, Index, indexToSongEntries, noteSong, timedSong, SongEvent, Tag } from './song';
 import { useCanvas } from './use-canvas';
 import { getText, unreachable } from './util';
 import { AudioOutput, OutputMode, send, allNotesOff, setMode } from './audio-output';
@@ -725,12 +725,32 @@ function App(props: AppProps): JSX.Element {
     }));
   };
 
+  const handleRevert = async () => {
+    fetchedSongsRef.current.clear();
+    const index: Index = JSON.parse(await getText('logIndex.json'));
+    const songs = indexToSongEntries(index);
+    setState(s => {
+      let { rawSong, song, nSong } = s;
+      if (s.songIx && rawSong && song) {
+        const entry = songs.find(e => e.file === s.songIx!.file && e.ix === s.songIx!.ix);
+        const tags = entry?.tags;
+        rawSong = { ...rawSong, tags };
+        song = { ...song, tags };
+        nSong = nSong ? noteSong(song) : undefined;
+      }
+      return { ...s, songs, rawSong, song, nSong };
+    });
+  };
+
   return (
     <div className="app-container">
       <div className="navbar">
         <span>midi notebook</span>
         {state.songIx && (state.songIx.file.replace(/\.json$/, '') + '/' + state.songIx.ix)}
         <div className="transport">
+          {!READONLY && <button className="transport-btn" onClick={handleRevert} disabled={!isDirty}>
+            &#x21a9;
+          </button>}
           {!READONLY && <button className="transport-btn" onClick={handleGlobalSave} disabled={!isDirty}>
             <img src="icons/save.svg" width={18} height={18} />
           </button>}
