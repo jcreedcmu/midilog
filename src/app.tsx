@@ -514,7 +514,7 @@ function App(props: AppProps): JSX.Element {
     setState(s => {
       const ix = s.songs.filter(e => e.file === file).length;
       const entry: SongEntry = { file, ix, start, duration_ms, hash, uuid, song, dirty: true };
-      return { ...s, songs: [...s.songs, entry], pendingEvents: [] };
+      return { ...s, songs: [entry, ...s.songs], pendingEvents: [] };
     });
     onSave(); // just resets timing
   };
