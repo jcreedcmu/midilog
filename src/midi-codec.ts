@@ -69,12 +69,19 @@ export function eventsToMidi(events: SongEvent[]): Uint8Array {
   trackData.push(0xff, 0x51, 0x03);
   trackData.push((TEMPO >> 16) & 0xff, (TEMPO >> 8) & 0xff, TEMPO & 0xff);
 
+  let pendingTicks = 0;
   for (const event of events) {
     const midi_us = event.delta.midi_us > 0x100000000 ? 0 : event.delta.midi_us;
     // 1 tick = 1 us, so ticks = midi_us exactly
-    const ticks = Math.round(midi_us);
-    trackData.push(...encodeVlq(ticks));
+    pendingTicks += Math.round(midi_us);
+
+    // Skip system messages (status >= 0xF0): sysex, active sensing, etc.
+    // These aren't used for playback; accumulate their delta onto the next event.
+    if (event.message[0] >= 0xf0) continue;
+
+    trackData.push(...encodeVlq(pendingTicks));
     trackData.push(...event.message);
+    pendingTicks = 0;
   }
 
   // End of track
