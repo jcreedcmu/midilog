@@ -800,7 +800,14 @@
   "start": "2021-09-06T18:12:31.297Z",
   "duration_ms": 76449.002,
   "hash": "c5b2de06652b78ca",
-  "uuid": "c4ef39f4-2add-4baf-b321-18e0a361ee9c"
+  "uuid": "c4ef39f4-2add-4baf-b321-18e0a361ee9c",
+  "tags": [
+   {
+    "label": "untitled Am-Dm-C-E7",
+    "start_ms": 0,
+    "end_ms": 76449.00200000002
+   }
+  ]
  },
  {
   "date": "2021-09-06",
