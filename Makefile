@@ -1,8 +1,8 @@
 watch:
-	node build.mjs watch
+	node build.ts watch
 
 serve:
 	node out/index.js
 
 static:
-	node build-static.mjs
+	node build-static.ts
