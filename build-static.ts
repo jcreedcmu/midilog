@@ -1,6 +1,7 @@
 import * as esbuild from 'esbuild';
 import * as fs from 'fs';
 import * as path from 'path';
+import { midiToEvents } from './src/midi-codec.ts';
 
 const dist = './dist';
 
@@ -30,8 +31,8 @@ for (const entry of index) {
 for (const [date, entries] of dateGroups) {
   entries.sort((a, b) => a.ix - b.ix);
   const songs = entries.map(entry => {
-    const contentPath = path.join('./data/log', entry.hash + '.json');
-    const events = JSON.parse(fs.readFileSync(contentPath, 'utf8'));
+    const contentPath = path.join('./data/log', entry.hash + '.mid');
+    const events = midiToEvents(fs.readFileSync(contentPath));
     const song = { start: entry.start, events };
     if (entry.uuid) song.uuid = entry.uuid;
     if (entry.tags) song.tags = entry.tags;

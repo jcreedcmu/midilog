@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as crypto from 'crypto';
 import express from 'express';
 import * as path from 'path';
+import { eventsToMidi, midiToEvents } from './midi-codec';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -21,7 +22,7 @@ type IndexEntry = {
   deleted?: boolean;
 };
 
-function contentHash(data: string): string {
+function contentHash(data: string | Buffer | Uint8Array): string {
   return crypto.createHash('sha256').update(data).digest('hex').slice(0, 16);
 }
 
@@ -69,8 +70,8 @@ app.get('/log/:file', (req, res) => {
   const entries = index.filter(e => e.date === date);
   entries.sort((a, b) => a.ix - b.ix);
   const songs = entries.map(entry => {
-    const contentPath = path.join(dataLogDir, entry.hash + '.json');
-    const events = JSON.parse(fs.readFileSync(contentPath, 'utf8'));
+    const contentPath = path.join(dataLogDir, entry.hash + '.mid');
+    const events = midiToEvents(fs.readFileSync(contentPath));
     const song: any = { start: entry.start, events };
     if (entry.uuid) song.uuid = entry.uuid;
     if (entry.tags) song.tags = entry.tags;
@@ -88,12 +89,12 @@ app.use(express.static(path.resolve(__dirname, '../public')));
 // Store note events, return hash
 app.post('/api/content', (req, res) => {
   const { events } = req.body;
-  const eventsJson = JSON.stringify(events);
-  const hash = contentHash(eventsJson);
-  const contentPath = path.join(dataLogDir, hash + '.json');
+  const midiBytes = eventsToMidi(events);
+  const hash = contentHash(midiBytes);
+  const contentPath = path.join(dataLogDir, hash + '.mid');
   if (!fs.existsSync(contentPath)) {
     fs.mkdirSync(dataLogDir, { recursive: true });
-    fs.writeFileSync(contentPath, eventsJson, 'utf8');
+    fs.writeFileSync(contentPath, midiBytes);
   }
   res.json({ hash });
 });

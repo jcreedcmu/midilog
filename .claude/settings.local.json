@@ -5,7 +5,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(ls:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(git -C /home/jcreed/proj/midilog log --oneline -5)",
+      "Bash(git -C /home/jcreed/proj/midilog status --short)"
     ]
   }
 }
