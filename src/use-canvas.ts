@@ -47,10 +47,14 @@ export function useCanvas<S>(
     const ci = infoRef.current;
     if (ci && size.x > 0 && size.y > 0) {
       const dpr = window.devicePixelRatio || 1;
-      ci.c.width = size.x * dpr;
-      ci.c.height = size.y * dpr;
+      const targetW = size.x * dpr;
+      const targetH = size.y * dpr;
+      if (ci.c.width !== targetW || ci.c.height !== targetH) {
+        ci.c.width = targetW;
+        ci.c.height = targetH;
+        ci.d.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
       ci.size = size;
-      ci.d.setTransform(dpr, 0, 0, dpr, 0, 0);
       render(ci, state);
     }
   }, [size, ...deps]);

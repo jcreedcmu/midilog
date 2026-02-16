@@ -54,10 +54,15 @@ export function renderMainCanvas(ci: CanvasInfo, state: AppState) {
     d.fillRect(0, vert_offset - pixel_of_pitch * (18 + i * 12), cw, 1);
   }
 
+  // Viewport culling: compute visible time range
+  const leftTime_ms = -xshift / pixel_of_ms;
+  const rightTime_ms = (cw - xshift) / pixel_of_ms;
+
   if (state.nSong !== undefined) {
     // Draw shadows for active notes first (behind everything)
     state.nSong.events.forEach(event => {
       if (event.t == 'note') {
+        if (event.time_ms + event.dur_ms < leftTime_ms || event.time_ms > rightTime_ms) return;
         const isActive = currentTime_ms >= event.time_ms && currentTime_ms <= event.time_ms + event.dur_ms;
         if (isActive) {
           d.save();
@@ -76,6 +81,7 @@ export function renderMainCanvas(ci: CanvasInfo, state: AppState) {
     // Draw all note rectangles
     state.nSong.events.forEach(event => {
       if (event.t == 'note') {
+        if (event.time_ms + event.dur_ms < leftTime_ms || event.time_ms > rightTime_ms) return;
         const x = xshift + event.time_ms * pixel_of_ms;
         const y = vert_offset - pixel_of_pitch * event.pitch;
         const w = event.dur_ms * pixel_of_ms;
@@ -98,6 +104,7 @@ export function renderMainCanvas(ci: CanvasInfo, state: AppState) {
       const textXshift = -1;
       state.nSong.events.forEach(event => {
         if (event.t == 'note') {
+          if (event.time_ms + event.dur_ms < leftTime_ms || event.time_ms > rightTime_ms) return;
           d.fillStyle = shadowColor;
           d.fillText(pitchName[event.pitch % 12],
             textXshift + xshift + event.time_ms * pixel_of_ms,
@@ -124,6 +131,7 @@ export function renderMainCanvas(ci: CanvasInfo, state: AppState) {
 
     state.nSong.events.forEach(event => {
       if (event.t == 'pedal') {
+        if (event.time_ms + event.dur_ms < leftTime_ms || event.time_ms > rightTime_ms) return;
         const x = xshift + event.time_ms * pixel_of_ms;
         const w = event.dur_ms * pixel_of_ms;
         d.fillStyle = '#c0c4d0';

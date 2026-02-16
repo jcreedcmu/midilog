@@ -187,6 +187,23 @@ function App(props: AppProps): JSX.Element {
     () => { }
   );
 
+  // Direct canvas repaint without going through React
+  function repaintCanvas(s: AppState) {
+    const ci = mc.current;
+    if (ci && ci.size.x > 0 && ci.size.y > 0) {
+      renderMainCanvas(ci, s);
+    }
+  }
+
+  // Update navbar time display periodically during playback (without per-frame React re-renders)
+  const [, forceRender] = useState(0);
+  const isPlaying = state.playback !== undefined && state.playback.pausedAt_ms === undefined;
+  useEffect(() => {
+    if (!isPlaying) return;
+    const id = setInterval(() => forceRender(n => n + 1), 250);
+    return () => clearInterval(id);
+  }, [isPlaying]);
+
   // Pre-fetch parsed song arrays; cache check happens inside setState
   const fetchedSongsRef = useRef<Map<string, Song[]>>(new Map());
 
@@ -252,7 +269,9 @@ function App(props: AppProps): JSX.Element {
             playback.playhead.eventIndex = song.events.length;
             s = scheduleNextCallback(s, dispatch);
           }
-          return { ...s };
+          repaintCanvas(s);
+          // Only trigger React re-render if we auto-paused (UI needs to update)
+          return s.playback?.pausedAt_ms !== undefined ? { ...s } : s;
         });
         break;
       case 'idle':
@@ -261,9 +280,10 @@ function App(props: AppProps): JSX.Element {
             return s;
           if (s.playback.pausedAt_ms !== undefined)
             return s; // Don't schedule next callback if paused
-          const { song, playback } = s;
           s = scheduleNextCallback(s, dispatch);
-          return { ...s };
+          repaintCanvas(s);
+          // Only trigger React re-render if we auto-paused (UI needs to update)
+          return s.playback?.pausedAt_ms !== undefined ? { ...s } : s;
         });
         break;
       case 'pause':
