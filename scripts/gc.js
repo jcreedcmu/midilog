@@ -14,8 +14,8 @@ const dryRun = !process.argv.includes('--delete');
 const index = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
 const referencedHashes = new Set(index.map(entry => entry.hash));
 
-const files = fs.readdirSync(logDir).filter(f => f.endsWith('.mid'));
-const orphans = files.filter(f => !referencedHashes.has(f.replace('.mid', '')));
+const files = fs.readdirSync(logDir).filter(f => f.endsWith('.json'));
+const orphans = files.filter(f => !referencedHashes.has(f.replace('.json', '')));
 
 if (orphans.length === 0) {
   console.log('No orphaned files found.');

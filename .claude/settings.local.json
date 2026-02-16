@@ -5,9 +5,7 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(ls:*)",
-      "WebFetch(domain:github.com)",
-      "WebFetch(domain:unpkg.com)",
-      "Bash(node:*)"
+      "WebFetch(domain:github.com)"
     ]
   }
 }
