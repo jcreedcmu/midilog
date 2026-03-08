@@ -7,7 +7,7 @@ import { AudioOutput, OutputMode, send, allNotesOff, setMode } from './audio-out
 import { renderMainCanvas, TAG_LANE_TOP, TAG_LANE_H, TAG_LANE_BOTTOM } from './render-canvas';
 import {
   AppState, AppProps, AppHandle, InitProps, Action, Dispatch, SongIx,
-  SidebarPanel, Playhead, Playback, CanvasHandlers, EditingTag,
+  SidebarPanel, Playhead, Playback, CanvasHandlers, EditingTag, MidiInputStatus,
   cx, formatDuration, findEventIndexAtTime, scheduleNextCallback,
 } from './types';
 
@@ -111,10 +111,14 @@ function FilesPanel({ songs, dispatch, currentSong, activeTags }: { songs: SongE
 }
 
 // Recording panel
-function RecordingPanel({ pendingEvents, onSave, onDiscard, autoSave, onToggleAutoSave }: { pendingEvents: SongEvent[], onSave: () => void, onDiscard: () => void, autoSave: boolean, onToggleAutoSave: () => void }) {
+function RecordingPanel({ pendingEvents, onSave, onDiscard, autoSave, onToggleAutoSave, midiInputStatus }: { pendingEvents: SongEvent[], onSave: () => void, onDiscard: () => void, autoSave: boolean, onToggleAutoSave: () => void, midiInputStatus: MidiInputStatus }) {
   return (
     <div className="panel-content">
       <h3 className="panel-header">Recording</h3>
+      <div className={cx('midi-status', `midi-status-${midiInputStatus}`)}>
+        <span className="midi-status-dot" />
+        MIDI input: {midiInputStatus}
+      </div>
       <div className="event-count">
         {pendingEvents.length} <span className="event-count-label">events</span>
       </div>
@@ -161,7 +165,7 @@ function SettingsPanel({ outputMode, hasMidi, dispatch }: { outputMode: OutputMo
 
 
 function App(props: AppProps): JSX.Element {
-  const { songs: initialSongs, output, onSave, dispatchRef } = props;
+  const { songs: initialSongs, output, onSave, midiInputStatus: initialMidiInputStatus, dispatchRef } = props;
   const [state, setState] = useState<AppState>({
     songs: initialSongs,
     playback: undefined,
@@ -171,6 +175,7 @@ function App(props: AppProps): JSX.Element {
     songIx: undefined,
     pendingEvents: [],
     pendingTag: undefined,
+    midiInputStatus: initialMidiInputStatus,
     pixelPerMs: 1 / 10,
     speed: 1,
     autoSave: false,
@@ -488,6 +493,9 @@ function App(props: AppProps): JSX.Element {
         break;
       case 'toggleAutoSave':
         setState(s => ({ ...s, autoSave: !s.autoSave }));
+        break;
+      case 'setMidiInputStatus':
+        setState(s => ({ ...s, midiInputStatus: action.status }));
         break;
       default:
         unreachable(action);
@@ -851,7 +859,7 @@ function App(props: AppProps): JSX.Element {
                 <FilesPanel songs={state.songs} dispatch={dispatch} currentSong={state.songIx} activeTags={state.song?.tags} />
               )}
               {activePanel === 'recording' && (
-                <RecordingPanel pendingEvents={state.pendingEvents} onSave={handleSave} onDiscard={handleDiscard} autoSave={state.autoSave} onToggleAutoSave={() => dispatch({ t: 'toggleAutoSave' })} />
+                <RecordingPanel pendingEvents={state.pendingEvents} onSave={handleSave} onDiscard={handleDiscard} autoSave={state.autoSave} onToggleAutoSave={() => dispatch({ t: 'toggleAutoSave' })} midiInputStatus={state.midiInputStatus} />
               )}
               {activePanel === 'settings' && (
                 <SettingsPanel outputMode={output.mode} hasMidi={output.midiOutput !== null} dispatch={dispatch} />

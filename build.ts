@@ -11,8 +11,9 @@ async function go() {
   await esbuild.build({
     ...common,
     entryPoints: ['./src/index.ts'],
-    outfile: './out/index.js',
+    outfile: './out/index.cjs',
     platform: 'node',
+    format: 'cjs',
     external: ['emitter'],
   });
 

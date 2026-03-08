@@ -9,6 +9,7 @@ export type InitProps = {
   songs: SongEntry[],
   output: AudioOutput,
   onSave: () => void,
+  midiInputStatus: MidiInputStatus,
 };
 
 export type AppProps = InitProps & {
@@ -41,12 +42,15 @@ export type AppState = {
   playback: Playback | undefined,
   pendingEvents: SongEvent[],
   pendingTag: Tag | undefined,
+  midiInputStatus: MidiInputStatus,
   pixelPerMs: number,
   speed: number,
   autoSave: boolean,
 };
 
 export type SidebarPanel = 'files' | 'recording' | 'settings';
+
+export type MidiInputStatus = 'connected' | 'disconnected' | 'unavailable';
 
 export type Action =
   | { t: 'none' }
@@ -69,6 +73,7 @@ export type Action =
   | { t: 'deleteEntry', file: string, ix: number }
   | { t: 'undeleteEntry', file: string, ix: number }
   | { t: 'toggleAutoSave' }
+  | { t: 'setMidiInputStatus', status: MidiInputStatus }
   ;
 
 export type Dispatch = (action: Action) => void;

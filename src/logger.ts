@@ -1,17 +1,18 @@
 import { init } from './app';
 import { createAudioOutput } from './audio-output';
 import { Index, SongEntry, SongEvent, indexToSongEntries } from './song';
+import { MidiInputStatus } from './types';
 import { getText } from './util';
 
 
-function getInput(midi: WebMidi.MIDIAccess): WebMidi.MIDIInput {
+function getInput(midi: WebMidi.MIDIAccess): WebMidi.MIDIInput | null {
   for (const input of midi.inputs.entries()) {
     const name = input[1].name;
     if (name !== undefined && name.match(/Turtle Beach/)) {
       return input[1];
     }
   }
-  throw 'input not found';
+  return null;
 }
 
 function getOutput(midi: WebMidi.MIDIAccess): WebMidi.MIDIOutput | null {
@@ -34,12 +35,21 @@ const timing = {
 async function go() {
   try {
     let midiOutput: WebMidi.MIDIOutput | null = null;
+    let midi: WebMidi.MIDIAccess | null = null;
+    let currentInput: WebMidi.MIDIInput | null = null;
+    let midiInputStatus: MidiInputStatus = 'unavailable';
 
     if (!READONLY) {
-      const midi = await navigator.requestMIDIAccess({ sysex: true });
-      var input = getInput(midi);
-      midiOutput = getOutput(midi);
-      console.log(`success, midi output: ${midiOutput ? 'found' : 'not found'}`);
+      try {
+        midi = await navigator.requestMIDIAccess({ sysex: true });
+        currentInput = getInput(midi);
+        midiOutput = getOutput(midi);
+        midiInputStatus = currentInput ? 'connected' : 'disconnected';
+        console.log(`midi input: ${currentInput ? 'found' : 'not found'}, output: ${midiOutput ? 'found' : 'not found'}`);
+      } catch (e) {
+        console.log('MIDI access denied or unavailable:', e);
+        midiInputStatus = 'unavailable';
+      }
     }
 
     const progressFill = document.querySelector('.loading-progress-fill') as HTMLElement | null;
@@ -82,36 +92,55 @@ async function go() {
 
     const onSave = () => { timing.isFirstEvent = true; };
 
-    const app = init({ songs, output, onSave });
+    const app = init({ songs, output, onSave, midiInputStatus });
 
-    if (!READONLY) {
-      input!.addEventListener('midimessage', e => {
-        console.log(e.data);
-        let event: SongEvent;
-        if (timing.isFirstEvent) {
-          event = {
-            message: Array.from(e.data),
-            delta: { midi_us: 0, wall_ms: 0 }
-          };
-          timing.isFirstEvent = false;
-        } else {
-          event = {
-            message: Array.from(e.data),
-            delta: {
-              midi_us: Math.round(1000 * e.timeStamp - timing.midiLastTime_us),
-              wall_ms: Math.round(Date.now() - timing.wallLastTime_ms),
-            }
-          };
+    function midiMessageHandler(e: WebMidi.MIDIMessageEvent) {
+      console.log(e.data);
+      let event: SongEvent;
+      if (timing.isFirstEvent) {
+        event = {
+          message: Array.from(e.data),
+          delta: { midi_us: 0, wall_ms: 0 }
+        };
+        timing.isFirstEvent = false;
+      } else {
+        event = {
+          message: Array.from(e.data),
+          delta: {
+            midi_us: Math.round(1000 * e.timeStamp - timing.midiLastTime_us),
+            wall_ms: Math.round(Date.now() - timing.wallLastTime_ms),
+          }
+        };
+      }
+      timing.midiLastTime_us = 1000 * e.timeStamp;
+      timing.wallLastTime_ms = Date.now();
+      app.dispatch({ t: 'addPendingEvent', event });
+    }
+
+    if (!READONLY && midi) {
+      if (currentInput) {
+        currentInput.addEventListener('midimessage', midiMessageHandler);
+      }
+
+      midi.onstatechange = () => {
+        const newInput = getInput(midi!);
+        if (newInput && newInput !== currentInput) {
+          currentInput = newInput;
+          timing.isFirstEvent = true;
+          currentInput.addEventListener('midimessage', midiMessageHandler);
+          app.dispatch({ t: 'setMidiInputStatus', status: 'connected' });
+          console.log('MIDI input connected');
+        } else if (!newInput && currentInput) {
+          currentInput = null;
+          app.dispatch({ t: 'setMidiInputStatus', status: 'disconnected' });
+          console.log('MIDI input disconnected');
         }
-        timing.midiLastTime_us = 1000 * e.timeStamp;
-        timing.wallLastTime_ms = Date.now();
-        app.dispatch({ t: 'addPendingEvent', event });
-      });
+      };
     }
   }
   catch (e) {
     console.log(e);
-    console.log(`error: ${e} <br>`);
+    console.log(`error: ${e}`);
   }
 }
 
