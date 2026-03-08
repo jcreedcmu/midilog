@@ -10,6 +10,8 @@ export type InitProps = {
   output: AudioOutput,
   onSave: () => void,
   midiInputStatus: MidiInputStatus,
+  midiInputName?: string,
+  onRefreshMidi?: () => void,
 };
 
 export type AppProps = InitProps & {
@@ -43,6 +45,7 @@ export type AppState = {
   pendingEvents: SongEvent[],
   pendingTag: Tag | undefined,
   midiInputStatus: MidiInputStatus,
+  midiInputName?: string,
   pixelPerMs: number,
   speed: number,
   autoSave: boolean,
@@ -73,7 +76,7 @@ export type Action =
   | { t: 'deleteEntry', file: string, ix: number }
   | { t: 'undeleteEntry', file: string, ix: number }
   | { t: 'toggleAutoSave' }
-  | { t: 'setMidiInputStatus', status: MidiInputStatus }
+  | { t: 'setMidiInputStatus', status: MidiInputStatus, name?: string }
   ;
 
 export type Dispatch = (action: Action) => void;

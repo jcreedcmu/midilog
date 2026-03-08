@@ -111,13 +111,16 @@ function FilesPanel({ songs, dispatch, currentSong, activeTags }: { songs: SongE
 }
 
 // Recording panel
-function RecordingPanel({ pendingEvents, onSave, onDiscard, autoSave, onToggleAutoSave, midiInputStatus }: { pendingEvents: SongEvent[], onSave: () => void, onDiscard: () => void, autoSave: boolean, onToggleAutoSave: () => void, midiInputStatus: MidiInputStatus }) {
+function RecordingPanel({ pendingEvents, onSave, onDiscard, autoSave, onToggleAutoSave, midiInputStatus, midiInputName, onRefreshMidi }: { pendingEvents: SongEvent[], onSave: () => void, onDiscard: () => void, autoSave: boolean, onToggleAutoSave: () => void, midiInputStatus: MidiInputStatus, midiInputName?: string, onRefreshMidi?: () => void }) {
   return (
     <div className="panel-content">
       <h3 className="panel-header">Recording</h3>
       <div className={cx('midi-status', `midi-status-${midiInputStatus}`)}>
         <span className="midi-status-dot" />
-        MIDI input: {midiInputStatus}
+        {midiInputStatus === 'connected' && midiInputName
+          ? midiInputName
+          : `MIDI input: ${midiInputStatus}`}
+        {onRefreshMidi && <button className="midi-refresh-btn" onClick={onRefreshMidi} title="Refresh MIDI devices">&#x21bb;</button>}
       </div>
       <div className="event-count">
         {pendingEvents.length} <span className="event-count-label">events</span>
@@ -165,7 +168,7 @@ function SettingsPanel({ outputMode, hasMidi, dispatch }: { outputMode: OutputMo
 
 
 function App(props: AppProps): JSX.Element {
-  const { songs: initialSongs, output, onSave, midiInputStatus: initialMidiInputStatus, dispatchRef } = props;
+  const { songs: initialSongs, output, onSave, midiInputStatus: initialMidiInputStatus, midiInputName: initialMidiInputName, onRefreshMidi, dispatchRef } = props;
   const [state, setState] = useState<AppState>({
     songs: initialSongs,
     playback: undefined,
@@ -176,6 +179,7 @@ function App(props: AppProps): JSX.Element {
     pendingEvents: [],
     pendingTag: undefined,
     midiInputStatus: initialMidiInputStatus,
+    midiInputName: initialMidiInputName,
     pixelPerMs: 1 / 10,
     speed: 1,
     autoSave: false,
@@ -495,7 +499,7 @@ function App(props: AppProps): JSX.Element {
         setState(s => ({ ...s, autoSave: !s.autoSave }));
         break;
       case 'setMidiInputStatus':
-        setState(s => ({ ...s, midiInputStatus: action.status }));
+        setState(s => ({ ...s, midiInputStatus: action.status, midiInputName: action.name }));
         break;
       default:
         unreachable(action);
@@ -859,7 +863,7 @@ function App(props: AppProps): JSX.Element {
                 <FilesPanel songs={state.songs} dispatch={dispatch} currentSong={state.songIx} activeTags={state.song?.tags} />
               )}
               {activePanel === 'recording' && (
-                <RecordingPanel pendingEvents={state.pendingEvents} onSave={handleSave} onDiscard={handleDiscard} autoSave={state.autoSave} onToggleAutoSave={() => dispatch({ t: 'toggleAutoSave' })} midiInputStatus={state.midiInputStatus} />
+                <RecordingPanel pendingEvents={state.pendingEvents} onSave={handleSave} onDiscard={handleDiscard} autoSave={state.autoSave} onToggleAutoSave={() => dispatch({ t: 'toggleAutoSave' })} midiInputStatus={state.midiInputStatus} midiInputName={state.midiInputName} onRefreshMidi={onRefreshMidi} />
               )}
               {activePanel === 'settings' && (
                 <SettingsPanel outputMode={output.mode} hasMidi={output.midiOutput !== null} dispatch={dispatch} />

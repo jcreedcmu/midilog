@@ -285,6 +285,21 @@ html, body {
 .midi-status-disconnected .midi-status-dot { background: #f44336; }
 .midi-status-disconnected { color: #c44; }
 
+.midi-refresh-btn {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  margin-left: auto;
+  color: inherit;
+}
+
+.midi-refresh-btn:hover {
+  background: #e0e0e0;
+}
+
 .event-count {
   font-size: 24px;
   font-weight: bold;

@@ -6,13 +6,23 @@ import { getText } from './util';
 
 
 function getInput(midi: WebMidi.MIDIAccess): WebMidi.MIDIInput | null {
-  for (const input of midi.inputs.entries()) {
-    const name = input[1].name;
-    if (name !== undefined && name.match(/Turtle Beach/)) {
-      return input[1];
+  for (const [, input] of midi.inputs) {
+    if (input.state === 'connected' && input.name?.match(/Turtle Beach/)) {
+      return input;
     }
   }
   return null;
+}
+
+function logMidiPorts(midi: WebMidi.MIDIAccess) {
+  console.log('MIDI inputs:');
+  for (const [id, input] of midi.inputs) {
+    console.log(`  ${id}: "${input.name}" state=${input.state} connection=${input.connection}`);
+  }
+  console.log('MIDI outputs:');
+  for (const [id, output] of midi.outputs) {
+    console.log(`  ${id}: "${output.name}" state=${output.state} connection=${output.connection}`);
+  }
 }
 
 function getOutput(midi: WebMidi.MIDIAccess): WebMidi.MIDIOutput | null {
@@ -42,10 +52,11 @@ async function go() {
     if (!READONLY) {
       try {
         midi = await navigator.requestMIDIAccess({ sysex: true });
+        logMidiPorts(midi);
         currentInput = getInput(midi);
         midiOutput = getOutput(midi);
         midiInputStatus = currentInput ? 'connected' : 'disconnected';
-        console.log(`midi input: ${currentInput ? 'found' : 'not found'}, output: ${midiOutput ? 'found' : 'not found'}`);
+        console.log(`midi input: ${currentInput ? `found (${currentInput.name})` : 'not found'}, output: ${midiOutput ? `found (${midiOutput.name})` : 'not found'}`);
       } catch (e) {
         console.log('MIDI access denied or unavailable:', e);
         midiInputStatus = 'unavailable';
@@ -92,8 +103,6 @@ async function go() {
 
     const onSave = () => { timing.isFirstEvent = true; };
 
-    const app = init({ songs, output, onSave, midiInputStatus });
-
     function midiMessageHandler(e: WebMidi.MIDIMessageEvent) {
       console.log(e.data);
       let event: SongEvent;
@@ -117,25 +126,50 @@ async function go() {
       app.dispatch({ t: 'addPendingEvent', event });
     }
 
+    async function refreshMidi() {
+      console.log('Refreshing MIDI ports...');
+      try {
+        // Re-request to get a fresh MIDIAccess with updated port map
+        midi = await navigator.requestMIDIAccess({ sysex: true });
+      } catch (e) {
+        console.log('MIDI re-request failed:', e);
+        return;
+      }
+      logMidiPorts(midi);
+
+      const newInput = getInput(midi);
+      if (newInput && !currentInput) {
+        currentInput = newInput;
+        timing.isFirstEvent = true;
+        currentInput.addEventListener('midimessage', midiMessageHandler);
+        app.dispatch({ t: 'setMidiInputStatus', status: 'connected', name: currentInput.name ?? undefined });
+        console.log(`MIDI input connected: ${currentInput.name}`);
+      } else if (!newInput && currentInput) {
+        const oldName = currentInput.name;
+        currentInput = null;
+        app.dispatch({ t: 'setMidiInputStatus', status: 'disconnected' });
+        console.log(`MIDI input disconnected: ${oldName}`);
+      } else if (newInput) {
+        console.log(`MIDI input unchanged: ${newInput.name}`);
+      } else {
+        console.log('No matching MIDI input found');
+      }
+    }
+
+    const midiInputName = currentInput?.name ?? undefined;
+    const onRefreshMidi = midi ? refreshMidi : undefined;
+    const app = init({ songs, output, onSave, midiInputStatus, midiInputName, onRefreshMidi });
+
     if (!READONLY && midi) {
       if (currentInput) {
         currentInput.addEventListener('midimessage', midiMessageHandler);
       }
 
-      midi.onstatechange = () => {
-        const newInput = getInput(midi!);
-        if (newInput && newInput !== currentInput) {
-          currentInput = newInput;
-          timing.isFirstEvent = true;
-          currentInput.addEventListener('midimessage', midiMessageHandler);
-          app.dispatch({ t: 'setMidiInputStatus', status: 'connected' });
-          console.log('MIDI input connected');
-        } else if (!newInput && currentInput) {
-          currentInput = null;
-          app.dispatch({ t: 'setMidiInputStatus', status: 'disconnected' });
-          console.log('MIDI input disconnected');
-        }
-      };
+      midi.addEventListener('statechange', (e) => {
+        const port = (e as any).port;
+        console.log(`MIDI statechange: ${port?.type} "${port?.name}" state=${port?.state} connection=${port?.connection}`);
+        refreshMidi();
+      });
     }
   }
   catch (e) {
